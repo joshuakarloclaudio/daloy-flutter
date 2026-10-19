@@ -1,7 +1,7 @@
 name: daloy_flutter
 description: "Daloy — worship music management for Android and iOS/iPadOS."
 publish_to: 'none'
-version: 1.0.0+4
+version: 1.0.1+5
 
 environment:
   sdk: ^3.13.5

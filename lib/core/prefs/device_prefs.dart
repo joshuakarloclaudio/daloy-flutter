@@ -29,7 +29,13 @@ class DevicePrefs {
     this.font = AppFont.daloy,
     this.lockEnabled = false,
     this.lockDelay = LockDelay.oneMinute,
+    this.cuePanelWidth = defaultCuePanelWidth,
   });
+
+  /// Perform's docked cue panel, in logical px; dragged wider or narrower.
+  static const defaultCuePanelWidth = 340.0;
+  static const minCuePanelWidth = 280.0;
+  static const maxCuePanelWidth = 560.0;
 
   final ThemeMode themeMode;
   final AppFont font;
@@ -37,12 +43,20 @@ class DevicePrefs {
   /// Face ID / fingerprint is asked for on opening the app.
   final bool lockEnabled;
   final LockDelay lockDelay;
+  final double cuePanelWidth;
 
-  DevicePrefs copyWith({ThemeMode? themeMode, AppFont? font, bool? lockEnabled, LockDelay? lockDelay}) => DevicePrefs(
+  DevicePrefs copyWith({
+    ThemeMode? themeMode,
+    AppFont? font,
+    bool? lockEnabled,
+    LockDelay? lockDelay,
+    double? cuePanelWidth,
+  }) => DevicePrefs(
     themeMode: themeMode ?? this.themeMode,
     font: font ?? this.font,
     lockEnabled: lockEnabled ?? this.lockEnabled,
     lockDelay: lockDelay ?? this.lockDelay,
+    cuePanelWidth: cuePanelWidth ?? this.cuePanelWidth,
   );
 
   @override
@@ -51,10 +65,11 @@ class DevicePrefs {
       other.themeMode == themeMode &&
       other.font == font &&
       other.lockEnabled == lockEnabled &&
-      other.lockDelay == lockDelay;
+      other.lockDelay == lockDelay &&
+      other.cuePanelWidth == cuePanelWidth;
 
   @override
-  int get hashCode => Object.hash(themeMode, font, lockEnabled, lockDelay);
+  int get hashCode => Object.hash(themeMode, font, lockEnabled, lockDelay, cuePanelWidth);
 }
 
 /// Loaded in `main()` before the first frame so the theme never flashes.
@@ -68,6 +83,7 @@ class DevicePrefsController extends _$DevicePrefsController {
   static const _fontKey = 'daloy.app_font';
   static const _lockKey = 'daloy.lock_enabled';
   static const _lockDelayKey = 'daloy.lock_delay';
+  static const _cuePanelWidthKey = 'daloy.cue_panel_width';
 
   SharedPreferences? get _store => ref.read(sharedPreferencesProvider);
 
@@ -80,6 +96,10 @@ class DevicePrefsController extends _$DevicePrefsController {
       font: AppFont.values.asNameMap()[store.getString(_fontKey)] ?? AppFont.daloy,
       lockEnabled: store.getBool(_lockKey) ?? false,
       lockDelay: LockDelay.values.asNameMap()[store.getString(_lockDelayKey)] ?? LockDelay.oneMinute,
+      cuePanelWidth: (store.getDouble(_cuePanelWidthKey) ?? DevicePrefs.defaultCuePanelWidth).clamp(
+        DevicePrefs.minCuePanelWidth,
+        DevicePrefs.maxCuePanelWidth,
+      ),
     );
   }
 
@@ -96,6 +116,11 @@ class DevicePrefsController extends _$DevicePrefsController {
   void setLockEnabled(bool on) {
     state = state.copyWith(lockEnabled: on);
     _store?.setBool(_lockKey, on);
+  }
+
+  void setCuePanelWidth(double width) {
+    state = state.copyWith(cuePanelWidth: width);
+    _store?.setDouble(_cuePanelWidthKey, width);
   }
 
   void setLockDelay(LockDelay delay) {

@@ -138,7 +138,7 @@ class DaloyGlass extends StatelessWidget {
     final shape = circle ? BoxShape.circle : BoxShape.rectangle;
     final radius = circle ? null : borderRadius;
     final edge =
-        border ?? (hairline ? Border.all(color: Colors.white.withValues(alpha: dark ? 0.12 : 0.6), width: 0.75) : null);
+        border ?? (hairline ? Border.all(color: Colors.white.withValues(alpha: dark ? 0.08 : 0.6), width: 0.75) : null);
 
     // Two layers: a decoration's gradient replaces its colour, so the tint and
     // the sheen can't share one.

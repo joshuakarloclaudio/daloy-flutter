@@ -19,6 +19,7 @@ class LiveCue {
     required this.kind,
     required this.body,
     required this.createdAt,
+    this.senderId,
     this.senderName,
     this.sectionId,
     this.songIndex,
@@ -28,6 +29,7 @@ class LiveCue {
     id: json['id'] as String,
     kind: LiveCueKind.parse(json['kind']),
     body: json['body'] as String,
+    senderId: (json['sender_id'] as num?)?.toInt(),
     senderName: json['sender_name'] as String?,
     createdAt: DateTime.fromMillisecondsSinceEpoch((json['created_at'] as num).toInt()),
     sectionId: json['section_id'] as String?,
@@ -37,6 +39,7 @@ class LiveCue {
   final String id;
   final LiveCueKind kind;
   final String body;
+  final int? senderId;
   final String? senderName;
   final DateTime createdAt;
 
@@ -50,6 +53,7 @@ class LiveCue {
     'id': id,
     'kind': kind.name,
     'body': body,
+    'sender_id': senderId,
     'sender_name': senderName,
     'created_at': createdAt.millisecondsSinceEpoch,
     'section_id': sectionId,

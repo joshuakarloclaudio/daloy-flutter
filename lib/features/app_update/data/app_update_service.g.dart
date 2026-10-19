@@ -12,7 +12,13 @@ part of 'app_update_service.dart';
 @ProviderFor(appUpdateService)
 final appUpdateServiceProvider = AppUpdateServiceProvider._();
 
-final class AppUpdateServiceProvider extends $FunctionalProvider<AppUpdateService, AppUpdateService, AppUpdateService>
+final class AppUpdateServiceProvider
+    extends
+        $FunctionalProvider<
+          AppUpdateService,
+          AppUpdateService,
+          AppUpdateService
+        >
     with $Provider<AppUpdateService> {
   AppUpdateServiceProvider._()
     : super(
@@ -30,7 +36,8 @@ final class AppUpdateServiceProvider extends $FunctionalProvider<AppUpdateServic
 
   @$internal
   @override
-  $ProviderElement<AppUpdateService> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<AppUpdateService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
   @override
   AppUpdateService create(Ref ref) {
@@ -39,7 +46,10 @@ final class AppUpdateServiceProvider extends $FunctionalProvider<AppUpdateServic
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(AppUpdateService value) {
-    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<AppUpdateService>(value));
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AppUpdateService>(value),
+    );
   }
 }
 
@@ -49,7 +59,12 @@ String _$appUpdateServiceHash() => r'a4c4f1228b9013ce0904b0ecebe1b51d5a42fab2';
 final installedVersionProvider = InstalledVersionProvider._();
 
 final class InstalledVersionProvider
-    extends $FunctionalProvider<AsyncValue<InstalledVersion>, InstalledVersion, FutureOr<InstalledVersion>>
+    extends
+        $FunctionalProvider<
+          AsyncValue<InstalledVersion>,
+          InstalledVersion,
+          FutureOr<InstalledVersion>
+        >
     with $FutureModifier<InstalledVersion>, $FutureProvider<InstalledVersion> {
   InstalledVersionProvider._()
     : super(
@@ -67,7 +82,9 @@ final class InstalledVersionProvider
 
   @$internal
   @override
-  $FutureProviderElement<InstalledVersion> $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
+  $FutureProviderElement<InstalledVersion> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
   FutureOr<InstalledVersion> create(Ref ref) {

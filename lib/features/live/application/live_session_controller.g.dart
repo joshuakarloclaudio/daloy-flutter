@@ -116,7 +116,7 @@ final class LiveSessionControllerProvider
 }
 
 String _$liveSessionControllerHash() =>
-    r'b095d699d016f663a43fc914fc7d7043e5c2e9d0';
+    r'0a46d01b2578dc8c46cd65bbbad23eb58ae50219';
 
 /// A line-up's live session as one device sees it: the twin of the web's
 /// `use-performance-live-session.ts`, owned by Perform.

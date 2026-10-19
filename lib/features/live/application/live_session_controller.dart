@@ -58,6 +58,15 @@ class LiveSessionController extends _$LiveSessionController {
   bool _left = false;
   bool _resyncing = false;
 
+  /// Who is typing, and when to forget they were: whispers say "typing", never "stopped".
+  static const typingFor = Duration(seconds: 5);
+  static const typingEvery = Duration(seconds: 2);
+  final _typingTimers = <int, Timer>{};
+  DateTime? _typingSentAt;
+
+  /// The session [LiveState.cues] belong to; a different one starts them over.
+  int? _cuesSessionId;
+
   /// Ids of moves and key changes that arrived by whisper, so their
   /// broadcast is skipped.
   final _whispered = <String>{};
@@ -172,6 +181,7 @@ class LiveSessionController extends _$LiveSessionController {
       'client-moved': _onWhisperedMove,
       'cue.sent': (data) => _onCue(LiveCue.fromJson(data)),
       'client-cue': (data) => _onCue(LiveCue.fromJson(data)),
+      'client-typing': _onTyping,
       'session.ended': (_) => _ended(LiveEnd.endedByTeam),
       'leader.updated': (data) => _setLeader((data['leader_user_id'] as num?)?.toInt(), data['leader_name'] as String?),
       'transposition.updated': (data) {
@@ -198,9 +208,12 @@ class LiveSessionController extends _$LiveSessionController {
     });
 
     _setLeader(session.leaderUserId, session.leaderName);
+    final newSession = _cuesSessionId != session.id;
+    _cuesSessionId = session.id;
     state = state.copyWith(
       status: _realtime.isConnected ? LiveStatus.live : LiveStatus.connecting,
       session: () => session,
+      cues: newSession ? const [] : state.cues,
       invite: () => null,
       drifted: false,
       missed: false,
@@ -208,6 +221,7 @@ class LiveSessionController extends _$LiveSessionController {
       moves: state.following ? state.moves + 1 : state.moves,
       ended: () => null,
     );
+    unawaited(_loadCues(session.id));
   }
 
   void _ended(LiveEnd why) {
@@ -248,6 +262,7 @@ class LiveSessionController extends _$LiveSessionController {
         moves: state.isSynced && position != state.position ? state.moves + 1 : state.moves,
         missed: state.drifted && position != state.position ? true : state.missed,
       );
+      unawaited(_loadCues(fresh.id));
     } on ApiException {
       // Still flaky — the next reconnect tries again.
     } finally {
@@ -264,6 +279,7 @@ class LiveSessionController extends _$LiveSessionController {
     _connection = null;
     _moveTimer?.cancel();
     _returnTimer?.cancel();
+    _clearTyping();
   }
 
   // -- Moving together -----------------------------------------------------------
@@ -452,7 +468,64 @@ class LiveSessionController extends _$LiveSessionController {
 
   // -- Cues --------------------------------------------------------------------------
 
+  /// The cues sent before we joined (or while we were away), folded in under
+  /// the ones that arrived live. They show in the list, not as a banner.
+  Future<void> _loadCues(int sessionId) async {
+    try {
+      final past = await _service.cues(lineUpId);
+      if (!ref.mounted || state.session?.id != sessionId) return;
+      final known = {for (final c in state.cues) c.id};
+      final merged = [...state.cues, for (final c in past) if (!known.contains(c.id)) c]
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      state = state.copyWith(cues: merged);
+    } on ApiException {
+      // The list fills in live; the history comes with the next resync.
+    }
+  }
+
+  // -- Typing ------------------------------------------------------------------------
+
+  /// Tells the others you're typing: a whisper, at most one every couple of
+  /// seconds, nothing saved and nothing sent to the server.
+  void typing() {
+    final channel = _channelName;
+    if (channel == null || !state.isIn) return;
+    final now = DateTime.now();
+    if (_typingSentAt case final at? when now.difference(at) < typingEvery) return;
+    _typingSentAt = now;
+    final user = ref.read(sessionControllerProvider).value?.user;
+    if (user == null) return;
+    _realtime.whisper(channel, 'typing', {'user_id': user.id, 'name': user.name});
+  }
+
+  void _onTyping(Map<String, dynamic> data) {
+    final id = (data['user_id'] as num?)?.toInt();
+    if (id == null || id == _me) return;
+    final name = data['name'] as String? ?? 'Someone';
+    _typingTimers[id]?.cancel();
+    _typingTimers[id] = Timer(typingFor, () => _stopTyping(id));
+    if (state.typing.any((p) => p.userId == id)) return;
+    state = state.copyWith(typing: [...state.typing, LiveParticipant(userId: id, name: name)]);
+  }
+
+  void _stopTyping(int? id) {
+    if (id == null) return;
+    _typingTimers.remove(id)?.cancel();
+    if (!ref.mounted || !state.typing.any((p) => p.userId == id)) return;
+    state = state.copyWith(typing: [for (final p in state.typing) if (p.userId != id) p]);
+  }
+
+  void _clearTyping() {
+    for (final timer in _typingTimers.values) {
+      timer.cancel();
+    }
+    _typingTimers.clear();
+    if (ref.mounted && state.typing.isNotEmpty) state = state.copyWith(typing: const []);
+  }
+
   void _onCue(LiveCue cue) {
+    // Sending is the end of typing.
+    _stopTyping(cue.senderId);
     if (state.cues.any((c) => c.id == cue.id)) return;
     state = state.copyWith(cues: [...state.cues, cue], incoming: () => cue);
   }
@@ -471,6 +544,7 @@ class LiveSessionController extends _$LiveSessionController {
       kind: kind,
       body: text,
       createdAt: DateTime.now(),
+      senderId: _me,
       senderName: ref.read(sessionControllerProvider).value?.user.name,
       songIndex: position?.songIndex,
       sectionId: position?.sectionFor(view),

@@ -115,7 +115,7 @@ class DaloyColors extends ThemeExtension<DaloyColors> {
     secondaryForeground: Color(0xFFFAFAFA),
     muted: Color(0xFF27272A),
     mutedForeground: Color(0xFF9F9FA9),
-    border: Color(0x1AFFFFFF),
+    border: Color(0x0AFFFFFF),
     ring: Color(0xFF71717B),
     destructive: Color(0xFFFF6467),
     sidebar: Color(0xFF18181B),

@@ -149,10 +149,10 @@ class _FlowArtworkState extends State<FlowArtwork> with SingleTickerProviderStat
             DecoratedBox(
               decoration: ShapeDecoration(
                 shape: widget.circle
-                    ? CircleBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.12)))
+                    ? CircleBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.08)))
                     : RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(widget.radius),
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                       ),
               ),
             ),

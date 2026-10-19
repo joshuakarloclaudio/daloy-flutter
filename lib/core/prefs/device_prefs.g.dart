@@ -96,7 +96,7 @@ final class DevicePrefsControllerProvider
 }
 
 String _$devicePrefsControllerHash() =>
-    r'a3c80b087d899c2c25fe61f25f7419bd59df9a80';
+    r'd5d73ef649568bf39c4958c345b6ad3aa297e46e';
 
 abstract class _$DevicePrefsController extends $Notifier<DevicePrefs> {
   DevicePrefs build();

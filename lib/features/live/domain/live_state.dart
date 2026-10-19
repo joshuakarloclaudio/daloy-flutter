@@ -79,6 +79,7 @@ class LiveState {
     this.position,
     this.moves = 0,
     this.cues = const [],
+    this.typing = const [],
     this.incoming,
     this.ended,
   });
@@ -121,6 +122,9 @@ class LiveState {
   /// This session's cues, oldest first.
   final List<LiveCue> cues;
 
+  /// Teammates typing a cue right now.
+  final List<LiveParticipant> typing;
+
   /// The latest cue from someone else, for the banner.
   final LiveCue? incoming;
 
@@ -157,6 +161,7 @@ class LiveState {
     LivePosition? Function()? position,
     int? moves,
     List<LiveCue>? cues,
+    List<LiveParticipant>? typing,
     LiveCue? Function()? incoming,
     LiveEnd? Function()? ended,
   }) => LiveState(
@@ -173,6 +178,7 @@ class LiveState {
     position: position == null ? this.position : position(),
     moves: moves ?? this.moves,
     cues: cues ?? this.cues,
+    typing: typing ?? this.typing,
     incoming: incoming == null ? this.incoming : incoming(),
     ended: ended == null ? this.ended : ended(),
   );

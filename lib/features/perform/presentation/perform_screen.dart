@@ -8,6 +8,7 @@ import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/device/screen_awake.dart';
+import '../../../core/prefs/device_prefs.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
 import '../../../shared/widgets/daloy_alert.dart';
@@ -100,6 +101,16 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
   int? _jumpTarget;
 
   bool _chromeVisible = true;
+
+  /// Tablet: the cue panel is open beside the chart.
+  bool _cuesDocked = false;
+
+  /// The panel's width while its edge is being dragged; saved when it lets go.
+  double? _cueDragWidth;
+
+  /// How many cues had been seen when the chat was last open; later ones from
+  /// others dot the top bar's button.
+  int _cuesSeen = 0;
   Timer? _hideTimer;
 
   /// A sheet or dialog is open: the chrome stays put meanwhile.
@@ -534,15 +545,40 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
   void _openLive() =>
       _overlay(() => showLiveSessionSheet(context, lineUpId: _lineUpId, onLeft: () {}, onEnded: _leave));
 
-  void _openCues() => _overlay(
-    () => showCuePad(
-      context,
-      lineUpId: _lineUpId,
-      onSent: (sent) {
-        if (!sent && mounted) _toast('That cue didn’t go out. Check your connection.');
-      },
-    ),
+  /// A tablet has room to keep the cues beside the chart; a phone gets a sheet.
+  bool get _canDockCues =>
+      MediaQuery.sizeOf(context).shortestSide >= DaloyBreakpoints.tabletShortestSide && ref.read(_liveProvider).isIn;
+
+  void _onCueSent(bool sent) {
+    if (!sent && mounted) _toast('That cue didn’t go out. Check your connection.');
+  }
+
+  void _setCuesDocked(bool open) {
+    _live.dismissIncoming();
+    setState(() => _cuesDocked = open);
+  }
+
+  /// The panel's width: dragged, else the saved one, never over half the screen.
+  double _cuePanelWidth(Size screen) => (_cueDragWidth ?? ref.read(devicePrefsControllerProvider).cuePanelWidth).clamp(
+    DevicePrefs.minCuePanelWidth,
+    screen.width / 2 < DevicePrefs.minCuePanelWidth ? DevicePrefs.minCuePanelWidth : screen.width / 2,
   );
+
+  void _markCuesSeen() => _cuesSeen = ref.read(_liveProvider).cues.length;
+
+  int _unreadCues(LiveState live) {
+    final me = ref.read(sessionControllerProvider).value?.user.id;
+    return live.cues.skip(_cuesSeen).where((cue) => cue.senderId == null || cue.senderId != me).length;
+  }
+
+  void _openCues() {
+    if (_canDockCues) {
+      _markCuesSeen();
+      return _setCuesDocked(!_cuesDocked);
+    }
+    _markCuesSeen();
+    unawaited(_overlay(() => showCueChat(context, lineUpId: _lineUpId, onSent: _onCueSent)).whenComplete(_markCuesSeen));
+  }
 
   void _onLiveEnded(LiveEnd? why) {
     if (why == null) return;
@@ -810,7 +846,16 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
       );
     }
 
-    final media = MediaQuery.of(context);
+    final screen = MediaQuery.of(context);
+    final docked = _cuesDocked && live.isIn && screen.size.shortestSide >= DaloyBreakpoints.tabletShortestSide;
+    final panelWidth = _cuePanelWidth(screen.size);
+    // The chart lays out in what the panel leaves, as if that were the screen.
+    final media = docked
+        ? screen.copyWith(
+            size: Size(screen.size.width - panelWidth - screen.padding.right, screen.size.height),
+            padding: screen.padding.copyWith(right: 0),
+          )
+        : screen;
     final width = media.size.width;
     final player = ref.watch(musicPlayerProvider.select((s) => (open: s.isOpen, here: s.isPlayingFrom(widget.source))));
     final strip = player.open ? performPlayerStripHeight : 0.0;
@@ -842,7 +887,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
             return i < 0 ? null : sectionChipLabel(sections[i], i);
           }();
 
-    return Stack(
+    final chart = Stack(
       children: [
         Positioned.fill(
           child: PinchZoom(
@@ -916,6 +961,10 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
                 loopSectionId: loop?.song == state.songIndex ? loop?.sectionId : null,
                 live: _canLive ? PerformLiveAction(lineUpId: _lineUpId, onGoLive: _goLive, onOpen: _openLive) : null,
                 onPlayAlong: canPlayAlong ? _playAlong : null,
+                onOpenCues: live.isIn ? _openCues : null,
+                cuesOpen: docked,
+                unreadCues: docked ? 0 : _unreadCues(live),
+                cuesTyping: !docked && live.typing.isNotEmpty,
               ),
             ),
           ),
@@ -942,7 +991,6 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
                       onPrev: _previousSong,
                       onNext: _nextSong,
                       onOpenSetlist: hasSetlist ? _openSetlist : null,
-                      onOpenCues: live.isIn ? _openCues : null,
                     ),
             ),
           ),
@@ -968,7 +1016,8 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
           right: DaloySpace.s4 + media.padding.right,
           child: Center(
             child: LiveCueBanner(
-              cue: live.incoming,
+              // The panel already shows it, docked.
+              cue: docked ? null : live.incoming,
               onOpen: () {
                 _live.dismissIncoming();
                 _openCues();
@@ -1032,6 +1081,31 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
             live: live.isIn,
             onPressed: () => _setChrome(true),
           ),
+        ),
+      ],
+    );
+
+    if (!docked) return chart;
+    return Row(
+      children: [
+        Expanded(child: MediaQuery(data: media, child: chart)),
+        CuePanel(
+          lineUpId: _lineUpId,
+          // Safe-area on the right belongs to the panel, which sits against that edge.
+          width: panelWidth + screen.padding.right,
+          onSent: _onCueSent,
+          onClose: () {
+            _markCuesSeen();
+            _setCuesDocked(false);
+          },
+          onResize: (delta) => setState(() {
+            _cueDragWidth = (panelWidth + delta).clamp(DevicePrefs.minCuePanelWidth, DevicePrefs.maxCuePanelWidth);
+          }),
+          onResizeEnd: () {
+            final width = _cueDragWidth;
+            if (width != null) ref.read(devicePrefsControllerProvider.notifier).setCuePanelWidth(width);
+            setState(() => _cueDragWidth = null);
+          },
         ),
       ],
     );

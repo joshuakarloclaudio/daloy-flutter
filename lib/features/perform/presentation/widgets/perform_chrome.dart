@@ -198,9 +198,25 @@ class PerformTopBar extends StatelessWidget {
     this.onLoopSection,
     this.loopSectionId,
     this.onPlayAlong,
+    this.onOpenCues,
+    this.cuesOpen = false,
+    this.unreadCues = 0,
+    this.cuesTyping = false,
   });
 
   final PerformState state;
+
+  /// The cues chat, while in a live session.
+  final VoidCallback? onOpenCues;
+
+  /// The docked cue panel is showing.
+  final bool cuesOpen;
+
+  /// Cues from the team since the chat was last open.
+  final int unreadCues;
+
+  /// Someone on the team is typing a cue.
+  final bool cuesTyping;
 
   /// Starts the set's YouTube videos playing along; null when there are none,
   /// or they already are.
@@ -266,6 +282,8 @@ class PerformTopBar extends StatelessWidget {
                       ),
                     ),
                     ?live,
+                    if (onOpenCues != null)
+                      _CuesButton(open: cuesOpen, unread: unreadCues, typing: cuesTyping, onPressed: onOpenCues!),
                     if (onPlayAlong != null)
                       TopBarIconButton(
                         icon: TablerIcons.brand_youtube,
@@ -326,16 +344,12 @@ class PerformTransport extends StatelessWidget {
     required this.onPrev,
     required this.onNext,
     required this.onOpenSetlist,
-    this.onOpenCues,
   });
 
   final PerformState state;
   final VoidCallback onPrev;
   final VoidCallback onNext;
   final VoidCallback? onOpenSetlist;
-
-  /// The cue pad, while in a live session: by the thumb, beside "next".
-  final VoidCallback? onOpenCues;
 
   @override
   Widget build(BuildContext context) {
@@ -380,8 +394,6 @@ class PerformTransport extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (onOpenCues != null)
-                  _StepButton(icon: TablerIcons.speakerphone, tooltip: 'Cues', onPressed: onOpenCues),
                 _StepButton(
                   icon: TablerIcons.player_skip_forward,
                   tooltip: 'Next song',
@@ -427,6 +439,70 @@ class _StepButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The top bar's way into the cues chat: lit while the panel is docked open,
+/// a dot when the team has said something since you last looked.
+class _CuesButton extends StatelessWidget {
+  const _CuesButton({required this.open, required this.unread, required this.typing, required this.onPressed});
+
+  final bool typing;
+  final bool open;
+  final int unread;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        if (open)
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: c.primary.withValues(alpha: 0.18), shape: BoxShape.circle),
+          ),
+        TopBarIconButton(
+          icon: open ? TablerIcons.message_circle_filled : TablerIcons.message_circle,
+          tooltip: unread > 0 ? 'Cues, $unread new' : 'Cues',
+          onPressed: onPressed,
+        ),
+        if (typing && unread == 0)
+          Positioned(
+            top: 6,
+            right: 4,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  color: c.primaryInk,
+                  borderRadius: DaloyRadii.all(DaloyRadii.full),
+                  border: Border.all(color: c.card, width: 1.5),
+                ),
+                child: Icon(TablerIcons.dots, size: 12, color: c.primaryForeground),
+              ),
+            ),
+          ),
+        if (unread > 0)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IgnorePointer(
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: c.primaryInk,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: c.card, width: 1.5),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -20,7 +20,8 @@ final appUpdateProvider = AppUpdateProvider._();
 /// Google Play first (it can update in place) and the API for the minimum
 /// build; iOS only has the API, which offers nothing until there's an App
 /// Store listing.
-final class AppUpdateProvider extends $NotifierProvider<AppUpdate, AppUpdateState> {
+final class AppUpdateProvider
+    extends $NotifierProvider<AppUpdate, AppUpdateState> {
   /// "Check for updates" on You, and the quiet check at launch. Android asks
   /// Google Play first (it can update in place) and the API for the minimum
   /// build; iOS only has the API, which offers nothing until there's an App
@@ -45,7 +46,10 @@ final class AppUpdateProvider extends $NotifierProvider<AppUpdate, AppUpdateStat
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(AppUpdateState value) {
-    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<AppUpdateState>(value));
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AppUpdateState>(value),
+    );
   }
 }
 
@@ -64,7 +68,12 @@ abstract class _$AppUpdate extends $Notifier<AppUpdateState> {
     final ref = this.ref as $Ref<AppUpdateState, AppUpdateState>;
     final element =
         ref.element
-            as $ClassProviderElement<AnyNotifier<AppUpdateState, AppUpdateState>, AppUpdateState, Object?, Object?>;
+            as $ClassProviderElement<
+              AnyNotifier<AppUpdateState, AppUpdateState>,
+              AppUpdateState,
+              Object?,
+              Object?
+            >;
     return element.handleCreate(ref, build);
   }
 }

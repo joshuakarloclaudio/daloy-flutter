@@ -20,7 +20,8 @@ final homeWidgetSyncProvider = HomeWidgetSyncProvider._();
 /// line-ups: re-sent a couple of seconds after the rows settle, and only
 /// when what it would show changed. Lives under the app shell, beside the
 /// OS search sync; signing out clears it (`SessionController`).
-final class HomeWidgetSyncProvider extends $NotifierProvider<HomeWidgetSync, void> {
+final class HomeWidgetSyncProvider
+    extends $NotifierProvider<HomeWidgetSync, void> {
   /// Keeps the home-screen widget in step with the active workspace's coming
   /// line-ups: re-sent a couple of seconds after the rows settle, and only
   /// when what it would show changed. Lives under the app shell, beside the
@@ -45,7 +46,10 @@ final class HomeWidgetSyncProvider extends $NotifierProvider<HomeWidgetSync, voi
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(void value) {
-    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<void>(value));
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
   }
 }
 
@@ -62,7 +66,14 @@ abstract class _$HomeWidgetSync extends $Notifier<void> {
   @override
   WhenComplete runBuild() {
     final ref = this.ref as $Ref<void, void>;
-    final element = ref.element as $ClassProviderElement<AnyNotifier<void, void>, void, Object?, Object?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
     return element.handleCreate(ref, build);
   }
 }
@@ -76,7 +87,8 @@ final canPinHomeWidgetProvider = CanPinHomeWidgetProvider._();
 /// Android launchers that can pin a widget from inside the app ("Add to
 /// home screen" on You). iOS has no such API.
 
-final class CanPinHomeWidgetProvider extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+final class CanPinHomeWidgetProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
     with $FutureModifier<bool>, $FutureProvider<bool> {
   /// Android launchers that can pin a widget from inside the app ("Add to
   /// home screen" on You). iOS has no such API.
@@ -96,7 +108,8 @@ final class CanPinHomeWidgetProvider extends $FunctionalProvider<AsyncValue<bool
 
   @$internal
   @override
-  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
   FutureOr<bool> create(Ref ref) {

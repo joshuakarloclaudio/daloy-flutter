@@ -53,6 +53,12 @@ class LiveSessionService {
     },
   );
 
+  /// Every cue sent so far in the session, oldest first: what a late joiner missed.
+  Future<List<LiveCue>> cues(int lineUpId) => _api.get(
+    '${_path(lineUpId)}/cues',
+    (json) => Decode.list(LiveCue.fromJson)((json! as Map<String, dynamic>)['cues']),
+  );
+
   /// [id] names a cue already whispered, so the broadcast reads as the same cue.
   Future<LiveCue> sendCue(
     int lineUpId,
