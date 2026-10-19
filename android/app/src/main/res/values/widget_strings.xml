@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_next_line_up_description">Your next line-up and its songs</string>
+    <string name="widget_empty_title">No line-ups coming up</string>
+    <string name="widget_plan">Plan a line-up</string>
+    <string name="widget_signed_out">Open Daloy to see your next line-up</string>
+</resources>

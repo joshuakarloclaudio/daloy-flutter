@@ -1,0 +1,3 @@
+// The widget takes the app's version from pubspec.yaml (FLUTTER_BUILD_NAME /
+// FLUTTER_BUILD_NUMBER) — but not Runner's xcconfigs, which link every pod.
+#include "../Flutter/Generated.xcconfig"

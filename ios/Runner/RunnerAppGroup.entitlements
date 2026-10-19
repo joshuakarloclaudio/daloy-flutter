@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- What the app signs with until there's a paid developer account: only
+	     the App Group the home-screen widget reads (DaloyWidget). Once
+	     Associated Domains can be signed, point CODE_SIGN_ENTITLEMENTS at
+	     Runner.entitlements, which has both. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.pro.daloy.app</string>
+	</array>
+</dict>
+</plist>

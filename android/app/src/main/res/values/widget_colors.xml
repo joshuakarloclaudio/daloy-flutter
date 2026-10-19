@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen widget (NextLineUpWidget), in the app's palette:
+     lib/core/theme/daloy_colors.dart. -->
+<resources>
+    <color name="widget_background">#FFFFFFFF</color>
+    <color name="widget_foreground">#FF09090B</color>
+    <color name="widget_muted">#FF71717B</color>
+    <color name="widget_hairline">#FFF4F4F5</color>
+    <color name="widget_primary">#FF007A55</color>
+    <color name="widget_primary_ink">#FF007A55</color>
+    <color name="widget_primary_foreground">#FFECFDF5</color>
+    <color name="widget_today">#FF047857</color>
+    <dimen name="widget_radius">20dp</dimen>
+</resources>

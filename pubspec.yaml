@@ -1,0 +1,108 @@
+name: daloy_flutter
+description: "Daloy — worship music management for Android and iOS/iPadOS."
+publish_to: 'none'
+version: 1.0.0+4
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  archive: ^4.5.2
+  clock: ^1.1.3
+  connectivity_plus: ^7.3.2
+  device_info_plus: ^13.3.0
+  dio: ^5.11.1
+  drift: ^2.35.2
+  drift_flutter: ^0.3.1
+  file_picker: ^13.1.0
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_secure_storage: ^11.2.0
+  flutter_soloud: ^5.2.1
+  flutter_tabler_icons: ^1.43.0
+  flutter_web_auth_2: ^5.1.0
+  freezed_annotation: ^3.1.0
+  go_router: ^18.1.0
+  home_widget: ^0.10.0
+  in_app_update: ^5.0.0
+  intl: ^0.20.3
+  json_annotation: ^4.12.0
+  local_auth: ^3.0.2
+  mobile_scanner: ^7.4.2
+  nsd: ^5.0.1
+  package_info_plus: ^10.2.2
+  path_provider: ^2.1.6
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  pusher_reverb_flutter: ^0.0.10
+  qr_flutter: ^4.1.0
+  riverpod_annotation: ^4.0.7
+  share_plus: ^13.3.1
+  shared_preferences: ^2.5.6
+  url_launcher: ^6.3.3
+  wakelock_plus: ^1.8.1
+  webview_flutter: ^4.14.1
+  youtube_player_iframe: ^6.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.16.2
+  riverpod_generator: ^4.0.9
+  freezed: ^4.0.2
+  json_serializable: ^6.14.1
+  drift_dev: ^2.35.1
+  fake_async: ^1.3.3
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
+
+flutter:
+  uses-material-design: true
+
+  # Static DM Sans cuts for exported PDFs (the pdf package can't vary the
+  # variable font's weight). Made from DMSans.ttf with fontTools'
+  # instancer: wght 400/700, opsz 14.
+  assets:
+    - assets/fonts/pdf/
+
+  fonts:
+    # Variable fonts — weights are driven through `FontVariation('wght', …)`,
+    # see lib/core/theme/daloy_typography.dart.
+    - family: DMSans
+      fonts:
+        - asset: assets/fonts/DMSans.ttf
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather.ttf
+
+# Launcher icons — regenerate with `dart run flutter_launcher_icons`.
+# Source art is frontend/public/app-icon.svg rendered at 1024px.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#008236"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  adaptive_icon_monochrome: "assets/icon/foreground.png"
+  remove_alpha_ios: true
+  background_color_ios: "#008236"
+  image_path_ios_dark_transparent: "assets/icon/foreground.png"
+  image_path_ios_tinted_grayscale: "assets/icon/foreground.png"
+
+# Native splash — regenerate with `dart run flutter_native_splash:create`.
+# Brand green with the white wave mark (assets/icon/foreground.png, resized
+# into assets/splash/). Stays up until Flutter draws its first frame, which
+# main() holds back until the session has loaded.
+flutter_native_splash:
+  color: "#008236"
+  image: assets/splash/mark.png
+  android_gravity: center
+  ios_content_mode: center
+  web: false
+
+  # Android 12+ uses the system splash API: icon clipped to a centred circle.
+  android_12:
+    color: "#008236"
+    image: assets/splash/android12.png

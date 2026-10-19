@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#FF18181B</color>
+    <color name="widget_foreground">#FFFAFAFA</color>
+    <color name="widget_muted">#FF9F9FA9</color>
+    <color name="widget_hairline">#FF27272A</color>
+    <color name="widget_primary">#FF006045</color>
+    <color name="widget_primary_ink">#FF00BC7D</color>
+    <color name="widget_primary_foreground">#FFECFDF5</color>
+    <color name="widget_today">#FF34D399</color>
+</resources>
