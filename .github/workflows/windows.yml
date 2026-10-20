@@ -1,0 +1,50 @@
+# Builds the Windows app (README → Desktop) and uploads the Release folder:
+# Daloy.exe with its DLLs and data\, all of which ship together.
+#
+# Needs the repository secret DALOY_ENV_JSON: the contents of env.local.json
+# (git-ignored), passed to the build as --dart-define-from-file.
+name: Windows build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, DP-7]
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.7
+          channel: stable
+          cache: true
+
+      - name: Write env.local.json
+        shell: pwsh
+        env:
+          DALOY_ENV_JSON: ${{ secrets.DALOY_ENV_JSON }}
+        run: |
+          if (-not $env:DALOY_ENV_JSON) {
+            Write-Error "Add the DALOY_ENV_JSON repository secret (the contents of env.local.json)."
+            exit 1
+          }
+          [IO.File]::WriteAllText("env.local.json", $env:DALOY_ENV_JSON)
+
+      - run: flutter pub get
+
+      - run: flutter build windows --release --dart-define-from-file=env.local.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Daloy-windows-${{ github.sha }}
+          path: build/windows/x64/runner/Release/
+          if-no-files-found: error
+          retention-days: 14
