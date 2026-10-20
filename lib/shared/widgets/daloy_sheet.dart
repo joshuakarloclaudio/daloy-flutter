@@ -37,7 +37,7 @@ Future<T?> showDaloySheet<T>({
   bool fit = false,
   Rect? anchor,
 }) {
-  if (ShellLayout.of(context) == ShellLayout.tablet) {
+  if (ShellLayout.of(context).wide) {
     return _showTabletSheet<T>(
       context: context,
       builder: builder,

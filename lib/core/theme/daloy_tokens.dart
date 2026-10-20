@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../utils/platform.dart';
+
 /// Corner radii (DESIGN.md `rounded`). Cards are [xl2]; buttons and inputs [xl].
 abstract final class DaloyRadii {
   static const sm = 6.0;
@@ -48,16 +50,19 @@ abstract final class DaloyBreakpoints {
   static const contentMaxWidth = 1024.0;
 }
 
-/// One height scale for every control. Everything this app targets is a
-/// touch screen, so these are the web's `pointer-coarse` values (one notch
-/// up from 32/36/40). Never override a height at the call site.
+/// One height scale for every control: the web's `pointer-coarse` values
+/// on touch screens, one notch down (32/36/40) on the Mac, where a pointer
+/// does the aiming. Never override a height at the call site.
 enum ControlSize {
-  sm(40),
-  md(44),
-  lg(48);
+  sm(40, 32),
+  md(44, 36),
+  lg(48, 40);
 
-  const ControlSize(this.height);
-  final double height;
+  const ControlSize(this._touch, this._pointer);
+  final double _touch;
+  final double _pointer;
+
+  double get height => isMacOS ? _pointer : _touch;
 }
 
 /// Shell chrome dimensions.

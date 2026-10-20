@@ -182,7 +182,7 @@ class _LineUpsScreenState extends ConsumerState<LineUpsScreen> {
           const TopBarSearchButton(),
           // Creating works offline: it's saved here and synced on reconnect. A
           // phone has the detached + at the tab bar; a tablet has no tab bar.
-          if (ShellLayout.of(context) == ShellLayout.tablet)
+          if (ShellLayout.of(context).wide)
             PrimaryActionButton(icon: TablerIcons.plus, label: 'New line-up', onPressed: create),
         ],
       ),
@@ -331,7 +331,7 @@ class _LineUpsScreenState extends ConsumerState<LineUpsScreen> {
       onPressed: (_) => create(),
       child: LayoutBuilder(
         builder: (context, box) {
-          _split = ShellLayout.of(context) == ShellLayout.tablet && SplitView.fits(context, box.maxWidth);
+          _split = ShellLayout.of(context).wide && SplitView.fits(context, box.maxWidth);
           if (!_split) return listScaffold;
           // A line-up deleted (or filtered away) leaves the pane empty.
           final selected = _selected;

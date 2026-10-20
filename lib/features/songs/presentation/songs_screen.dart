@@ -263,7 +263,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
     final gutter = DaloySpace.gutter(context);
 
     final create = _create;
-    final isTablet = ShellLayout.of(context) == ShellLayout.tablet;
+    final isWide = ShellLayout.of(context).wide;
 
     Widget listScaffold({required bool compact}) {
       _compactList = compact;
@@ -279,7 +279,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
               ),
             const TopBarSearchButton(),
             // A phone has the detached + at the tab bar; a tablet has no tab bar.
-            if (isTablet) PrimaryActionButton(icon: TablerIcons.plus, label: 'New song', onPressed: create),
+            if (isWide) PrimaryActionButton(icon: TablerIcons.plus, label: 'New song', onPressed: create),
           ],
         ),
         body: LayoutBuilder(
@@ -304,7 +304,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
                   SliverLargeTitle(
                     'Songs',
                     inset: side,
-                    trailing: isTablet && !compact ? const SongsSegmentSwitch() : null,
+                    trailing: isWide && !compact ? const SongsSegmentSwitch() : null,
                   ),
                   if (compact)
                     SliverToBoxAdapter(
@@ -460,7 +460,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
     return inBar(
       LayoutBuilder(
         builder: (context, box) {
-          _split = isTablet && SplitView.fits(context, box.maxWidth);
+          _split = isWide && SplitView.fits(context, box.maxWidth);
           if (!_split) return listScaffold(compact: false);
           // A song deleted (or filtered away) leaves the pane empty.
           final selected = _selected;

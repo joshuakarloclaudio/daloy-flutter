@@ -77,7 +77,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final page = ref.watch(dashboardControllerProvider);
     final controller = ref.read(dashboardControllerProvider.notifier);
-    final isTablet = ShellLayout.of(context) == ShellLayout.tablet;
+    final isWide = ShellLayout.of(context).wide;
     final gutter = DaloySpace.gutter(context);
 
     void openSong(Song song) {
@@ -253,8 +253,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         appBar: DaloyTopBar(
           // A tablet's shell already carries the workspace (top bar, sidebar);
           // phones put the switcher in the bar.
-          title: isTablet ? 'Home' : null,
-          titleWidget: isTablet ? null : const WorkspaceSwitcherHeading(),
+          title: isWide ? 'Home' : null,
+          titleWidget: isWide ? null : const WorkspaceSwitcherHeading(),
           actions: [
             // Background sync shows as a quiet spinner; pulling down is how
             // you ask for one.
@@ -266,7 +266,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const TopBarSearchButton(),
             // Line-ups can be created offline; they sync on reconnect. A phone
             // has the detached + at the tab bar; a tablet has no tab bar.
-            if (isTablet)
+            if (isWide)
               Builder(
                 builder: (buttonContext) => PrimaryActionButton(
                   icon: TablerIcons.plus,

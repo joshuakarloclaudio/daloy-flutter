@@ -30,3 +30,48 @@ class SidebarOpen extends Notifier<({bool landscape, bool portrait})> {
     open: !isOpen(landscape: landscape),
   );
 }
+
+/// The Mac's sidebar: collapsed to an icon rail or not, and how wide it is
+/// open (dragged from its edge). Starts open at [defaultWidth]; per device.
+final desktopSidebarProvider = NotifierProvider<DesktopSidebar, ({bool collapsed, double width})>(DesktopSidebar.new);
+
+class DesktopSidebar extends Notifier<({bool collapsed, double width})> {
+  static const _collapsedKey = 'daloy.desktop_sidebar_collapsed';
+  static const _widthKey = 'daloy.desktop_sidebar_width';
+
+  static const defaultWidth = 240.0;
+  static const minWidth = 200.0;
+  static const maxWidth = 360.0;
+  static const railWidth = 56.0;
+
+  @override
+  ({bool collapsed, double width}) build() {
+    final store = ref.watch(sharedPreferencesProvider);
+    return (
+      collapsed: store?.getBool(_collapsedKey) ?? false,
+      width: (store?.getDouble(_widthKey) ?? defaultWidth).clamp(minWidth, maxWidth),
+    );
+  }
+
+  void toggle() {
+    state = (collapsed: !state.collapsed, width: state.width);
+    ref.read(sharedPreferencesProvider)?.setBool(_collapsedKey, state.collapsed);
+  }
+
+  /// While the edge is dragged (a rail opens up); [save] once it's let go.
+  void resizeBy(double dx) {
+    final from = state.collapsed ? railWidth : state.width;
+    state = (collapsed: false, width: (from + dx).clamp(minWidth, maxWidth));
+  }
+
+  void save() {
+    final store = ref.read(sharedPreferencesProvider);
+    store?.setDouble(_widthKey, state.width);
+    store?.setBool(_collapsedKey, state.collapsed);
+  }
+
+  void reset() {
+    state = (collapsed: false, width: defaultWidth);
+    save();
+  }
+}

@@ -151,7 +151,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final isFiltering = !query.isDefault;
     final showShared = state.shared.isNotEmpty && !isFiltering;
 
-    final isTablet = ShellLayout.of(context) == ShellLayout.tablet;
+    final isWide = ShellLayout.of(context).wide;
 
     return Scaffold(
       appBar: const DaloyTopBar(title: 'Discover', largeTitle: true, actions: [TopBarSearchButton()]),
@@ -167,7 +167,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               onRefresh: online ? _controller.refresh : null,
               slivers: [
-                SliverLargeTitle('Discover', inset: side, trailing: isTablet ? const SongsSegmentSwitch() : null),
+                SliverLargeTitle('Discover', inset: side, trailing: isWide ? const SongsSegmentSwitch() : null),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: side - gutter),

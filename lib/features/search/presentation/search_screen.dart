@@ -96,7 +96,7 @@ bool _panelOpen = false;
 /// page (field focused) pushed over the tabs on a phone. ⌘K, the magnifier on
 /// every tab and the rail all come here.
 void openSearch(BuildContext context) {
-  if (ShellLayout.of(context) == ShellLayout.tablet) {
+  if (ShellLayout.of(context).wide) {
     if (_panelOpen) return;
     _panelOpen = true;
     showSearchPanel(context).whenComplete(() => _panelOpen = false);

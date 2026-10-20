@@ -12,6 +12,8 @@ import '../features/search/presentation/os_search_scope.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/sync/realtime_scope.dart';
 import '../features/workspaces/presentation/workspace_switcher.dart';
+import 'desktop_menu_bar.dart';
+import 'desktop_shell.dart';
 import 'floating_tab_bar.dart';
 import 'live_session_bar.dart';
 import 'primary_action.dart';
@@ -23,7 +25,8 @@ const _profileBranch = 3;
 
 /// The app frame around the tab screens: a floating glass tab bar on phones
 /// (that folds on scroll, see `floating_tab_bar.dart`), a top tab bar that
-/// opens into a sidebar on tablets (`tablet_shell.dart`).
+/// opens into a sidebar on tablets (`tablet_shell.dart`), and a fixed
+/// sidebar on the Mac (`desktop_shell.dart`).
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
 
@@ -39,19 +42,39 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) => AppUpdateScope(child: _frame(context));
 
   Widget _frame(BuildContext context) {
-    final tablet = ShellLayout.of(context) == ShellLayout.tablet;
+    final layout = ShellLayout.of(context);
     // What's playing plays on from tab to tab; a running performance is
     // joinable from every tab (Home has its own card).
     final accessory = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // A tablet leaves the bottom edge to the bar.
-        MiniPlayerBar(safeBottom: tablet),
+        // A tablet or the Mac leaves the bottom edge to the bar.
+        MiniPlayerBar(safeBottom: layout.wide),
         LiveSessionBar(hidden: navigationShell.currentIndex == _homeBranch),
       ],
     );
 
-    if (tablet) {
+    if (layout == ShellLayout.desktop) {
+      return _SearchShortcut(
+        child: DesktopMenuBar(
+          currentIndex: navigationShell.currentIndex,
+          child: Scaffold(
+            body: RealtimeScope(
+              child: OsSearchScope(
+                child: DesktopShell(
+                  currentIndex: navigationShell.currentIndex,
+                  onSelect: _go,
+                  avatar: (size, active) => _UserAvatar(active: active, size: size),
+                  accessory: accessory,
+                  child: navigationShell,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    if (layout == ShellLayout.tablet) {
       return _SearchShortcut(
         child: Scaffold(
           body: RealtimeScope(
