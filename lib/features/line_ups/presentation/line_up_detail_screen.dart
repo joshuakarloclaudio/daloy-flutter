@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/daloy_toast.dart';
@@ -166,7 +167,7 @@ class _LineUpDetailScreenState extends ConsumerState<LineUpDetailScreen> {
                 if (lineUp != null && !lineUp.isPending) ...[
                   Builder(
                     builder: (context) => TopBarIconButton(
-                      icon: Theme.of(context).platform == TargetPlatform.iOS ? TablerIcons.share_2 : TablerIcons.share,
+                      icon: Theme.of(context).platform.isApple ? TablerIcons.share_2 : TablerIcons.share,
                       tooltip: 'Share',
                       onPressed: () => shareLineUpLink(context, ref, lineUp),
                     ),
@@ -178,9 +179,7 @@ class _LineUpDetailScreenState extends ConsumerState<LineUpDetailScreen> {
                   ),
                   DaloyMenuButton(
                     tooltip: 'More actions',
-                    icon: Theme.of(context).platform == TargetPlatform.iOS
-                        ? TablerIcons.dots
-                        : TablerIcons.dots_vertical,
+                    icon: Theme.of(context).platform.isApple ? TablerIcons.dots : TablerIcons.dots_vertical,
                     items: lineUpMenuItems(context, ref, lineUp, onDetails: true),
                   ),
                 ],

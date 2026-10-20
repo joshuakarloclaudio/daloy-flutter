@@ -1,5 +1,5 @@
 name: daloy_flutter
-description: "Daloy — worship music management for Android and iOS/iPadOS."
+description: "Daloy — worship music management for Android, iOS/iPadOS and macOS."
 publish_to: 'none'
 version: 1.0.1+5
 
@@ -90,6 +90,10 @@ flutter_launcher_icons:
   background_color_ios: "#008236"
   image_path_ios_dark_transparent: "assets/icon/foreground.png"
   image_path_ios_tinted_grayscale: "assets/icon/foreground.png"
+  # macOS draws no mask, so the squircle, grid inset and shadow are baked in.
+  macos:
+    generate: true
+    image_path: "assets/icon/icon_macos.png"
 
 # Native splash — regenerate with `dart run flutter_native_splash:create`.
 # Brand green with the white wave mark (assets/icon/foreground.png, resized

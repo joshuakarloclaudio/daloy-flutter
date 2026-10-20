@@ -18,7 +18,11 @@ import '../domain/present_deck.dart';
 /// "Ana's iPad": how this device is named to others nearby.
 String presentDeviceName(BuildContext context, String? userName) {
   final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
-  final kind = Platform.isIOS ? (tablet ? 'iPad' : 'iPhone') : (tablet ? 'tablet' : 'phone');
+  final kind = Platform.isMacOS
+      ? 'Mac'
+      : Platform.isIOS
+      ? (tablet ? 'iPad' : 'iPhone')
+      : (tablet ? 'tablet' : 'phone');
   final first = userName?.trim().split(RegExp(r'\s+')).first ?? '';
   return first.isEmpty ? 'Daloy $kind' : '$first’s $kind';
 }

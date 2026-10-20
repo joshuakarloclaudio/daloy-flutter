@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
 import 'hairline.dart';
 
 /// One flat bordered surface holding a few rows, hairlines inset past the
@@ -58,10 +59,10 @@ class SettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     return InkWell(
       onTap: onTap,
-      splashFactory: isIOS ? NoSplash.splashFactory : null,
+      splashFactory: isApple ? NoSplash.splashFactory : null,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 56),
         child: Padding(

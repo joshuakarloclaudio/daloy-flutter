@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/daloy_theme.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../application/song_sync.dart';
@@ -74,7 +75,7 @@ class SongListRow extends StatelessWidget {
     final c = context.colors;
     final subtitle = song.artist?.isNotEmpty == true ? song.artist! : 'Unknown artist';
 
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     // No overflow button: touch and hold opens the actions, and screen readers
     // get each one as a custom action.
     return DaloyContextMenu(
@@ -84,7 +85,7 @@ class SongListRow extends StatelessWidget {
           InkWell(
             onTap: onTap,
             // iOS cells highlight on press; Android ripples.
-            splashFactory: isIOS ? NoSplash.splashFactory : null,
+            splashFactory: isApple ? NoSplash.splashFactory : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s4, vertical: DaloySpace.s3),
               child: Row(

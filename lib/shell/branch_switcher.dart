@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/daloy_theme.dart';
+import '../core/utils/platform.dart';
 
 /// Holds every tab's navigator, alive, and shows the current one — the
 /// platform's way. iOS swaps tabs instantly, like `UITabBarController`;
@@ -25,7 +26,7 @@ class _BranchSwitcherState extends State<BranchSwitcher> with SingleTickerProvid
   void didUpdateWidget(BranchSwitcher old) {
     super.didUpdateWidget(old);
     if (old.currentIndex == widget.currentIndex) return;
-    final animate = Theme.of(context).platform != TargetPlatform.iOS && !MediaQuery.disableAnimationsOf(context);
+    final animate = !Theme.of(context).platform.isApple && !MediaQuery.disableAnimationsOf(context);
     animate ? _controller.forward(from: 0) : _controller.value = 1;
   }
 

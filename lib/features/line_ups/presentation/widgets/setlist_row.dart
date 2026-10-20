@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 
 import '../../../../core/theme/daloy_theme.dart';
+import '../../../../core/utils/platform.dart';
 import '../../../../shared/widgets/daloy_menu.dart';
 import '../../application/line_up_detail_controller.dart';
 
@@ -23,7 +24,7 @@ class SetlistRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final subtitle = [?song.artist, ?song.tempo].join(' · ');
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
 
     return DaloyContextMenu(
       items: menu,
@@ -32,7 +33,7 @@ class SetlistRow extends StatelessWidget {
           HapticFeedback.selectionClick();
           onTap();
         },
-        splashFactory: isIOS ? NoSplash.splashFactory : null,
+        splashFactory: isApple ? NoSplash.splashFactory : null,
         child: Padding(
           padding: const EdgeInsets.only(left: DaloySpace.s1),
           child: Row(

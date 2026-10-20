@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' show DateFormat;
 
 import '../../../../core/theme/daloy_theme.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/platform.dart';
 import '../../../../shared/widgets/daloy_menu.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../domain/line_up.dart';
@@ -85,14 +86,14 @@ class LineUpAgendaRow extends StatelessWidget {
       lineUp.isEmpty ? 'No songs yet' : lineUpSongsLabel(lineUp.songsCount),
     ].join(' · ');
 
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     // No overflow button: touch and hold opens the actions, and screen readers
     // get each one as a custom action.
     return DaloyContextMenu(
       items: menu,
       child: InkWell(
         onTap: onTap,
-        splashFactory: isIOS ? NoSplash.splashFactory : null,
+        splashFactory: isApple ? NoSplash.splashFactory : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s4, vertical: DaloySpace.s3),
           child: Row(

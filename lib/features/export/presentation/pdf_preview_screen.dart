@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/daloy_theme.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/daloy_spinner.dart';
@@ -67,7 +68,7 @@ class PdfPreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     return Scaffold(
       backgroundColor: c.muted,
       appBar: DaloyTopBar(
@@ -76,7 +77,7 @@ class PdfPreviewScreen extends StatelessWidget {
           TopBarIconButton(icon: TablerIcons.printer, tooltip: 'Print', onPressed: _print),
           Builder(
             builder: (button) => TopBarIconButton(
-              icon: isIOS ? TablerIcons.share_2 : TablerIcons.share,
+              icon: isApple ? TablerIcons.share_2 : TablerIcons.share,
               tooltip: 'Share PDF',
               onPressed: () => _share(anchorOf(button)),
             ),

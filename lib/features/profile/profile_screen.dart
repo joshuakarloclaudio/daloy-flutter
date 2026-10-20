@@ -7,6 +7,7 @@ import '../../core/prefs/device_prefs.dart';
 import '../../core/router/routes.dart';
 import '../../core/theme/daloy_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/platform.dart';
 import '../../shared/widgets/daloy_top_bar.dart';
 import '../../shared/widgets/flow_artwork.dart';
 import '../../shared/widgets/mode_button.dart';
@@ -138,7 +139,7 @@ class ProfileScreen extends ConsumerWidget {
                         SettingsRow(
                           leading: const SettingsGlyph(TablerIcons.qrcode),
                           title: 'Join a workspace',
-                          subtitle: 'Scan a code or paste a link',
+                          subtitle: isMacOS ? 'Paste a join link' : 'Scan a code or paste a link',
                           onTap: () => showJoinScanner(context),
                         ),
                       ],
@@ -173,7 +174,8 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const _Section(label: 'Privacy', children: [LockSettingsRows()]),
+                    // The Mac has its own login, so no app lock there.
+                    if (!isMacOS) const _Section(label: 'Privacy', children: [LockSettingsRows()]),
                     _Section(
                       label: 'This device',
                       children: [
@@ -207,25 +209,35 @@ class ProfileScreen extends ConsumerWidget {
                     _Section(
                       label: 'About',
                       children: [
-                        SettingsRow(
-                          leading: const SettingsGlyph(TablerIcons.refresh),
-                          title: 'Check for updates',
-                          subtitle: switch (update.status) {
-                            AppUpdateStatus.available when update.latestVersion != null =>
-                              'Daloy ${update.latestVersion} is available',
-                            AppUpdateStatus.available => 'An update is available',
-                            AppUpdateStatus.downloading => 'Downloading the update…',
-                            AppUpdateStatus.readyToInstall => 'Ready — restart to update',
-                            _ => installed == null ? null : 'You have ${installed.label}',
-                          },
-                          trailing: update.busy
-                              ? const DaloySpinner(size: 16)
-                              : update.status == AppUpdateStatus.available ||
-                                    update.status == AppUpdateStatus.readyToInstall
-                              ? Text('Update', style: context.text.bodyMedium!.copyWith(color: c.primaryInk))
-                              : null,
-                          onTap: update.status == AppUpdateStatus.checking ? null : () => checkForUpdates(context, ref),
-                        ),
+                        // The App Store updates the Mac app.
+                        if (isMacOS)
+                          SettingsRow(
+                            leading: const SettingsGlyph(TablerIcons.info_circle),
+                            title: 'Version',
+                            trailing: installed == null ? null : _Value(installed.label),
+                          )
+                        else
+                          SettingsRow(
+                            leading: const SettingsGlyph(TablerIcons.refresh),
+                            title: 'Check for updates',
+                            subtitle: switch (update.status) {
+                              AppUpdateStatus.available when update.latestVersion != null =>
+                                'Daloy ${update.latestVersion} is available',
+                              AppUpdateStatus.available => 'An update is available',
+                              AppUpdateStatus.downloading => 'Downloading the update…',
+                              AppUpdateStatus.readyToInstall => 'Ready — restart to update',
+                              _ => installed == null ? null : 'You have ${installed.label}',
+                            },
+                            trailing: update.busy
+                                ? const DaloySpinner(size: 16)
+                                : update.status == AppUpdateStatus.available ||
+                                      update.status == AppUpdateStatus.readyToInstall
+                                ? Text('Update', style: context.text.bodyMedium!.copyWith(color: c.primaryInk))
+                                : null,
+                            onTap: update.status == AppUpdateStatus.checking
+                                ? null
+                                : () => checkForUpdates(context, ref),
+                          ),
                       ],
                     ),
                     _Section(

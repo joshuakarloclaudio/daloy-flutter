@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
 import 'daloy_button.dart';
 
 /// The 48px touch top bar every screen gets (`useMobileTopBar` /
@@ -75,12 +76,12 @@ class _DaloyTopBarState extends State<DaloyTopBar> {
   Widget? _leading(BuildContext context) {
     final route = ModalRoute.of(context);
     if (route == null || !route.impliesAppBarDismissal) return null;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     final close = route is PageRoute && route.fullscreenDialog;
     return Padding(
       padding: const EdgeInsets.only(left: DaloySpace.s1),
       child: TopBarIconButton(
-        icon: close ? TablerIcons.x : (isIOS ? TablerIcons.chevron_left : TablerIcons.arrow_left),
+        icon: close ? TablerIcons.x : (isApple ? TablerIcons.chevron_left : TablerIcons.arrow_left),
         tooltip: close ? 'Close' : 'Back',
         onPressed: () => Navigator.of(context).maybePop(),
       ),

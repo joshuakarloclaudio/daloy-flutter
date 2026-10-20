@@ -7,12 +7,13 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/router/incoming_link.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_sheet.dart';
 import '../../../shared/widgets/sheet_frame.dart';
 
 /// Scan a workspace's join QR code (or paste its link) and open the join
-/// screen for it.
+/// screen for it. The Mac has no camera to point, so there it only pastes.
 Future<void> showJoinScanner(BuildContext context) {
   final router = GoRouter.of(context);
   return showDaloySheet<void>(
@@ -38,16 +39,15 @@ class _JoinScannerSheet extends StatefulWidget {
 }
 
 class _JoinScannerSheetState extends State<_JoinScannerSheet> {
-  final _controller = MobileScannerController(
-    formats: const [BarcodeFormat.qrCode],
-    detectionSpeed: DetectionSpeed.noDuplicates,
-  );
+  final _controller = isMacOS
+      ? null
+      : MobileScannerController(formats: const [BarcodeFormat.qrCode], detectionSpeed: DetectionSpeed.noDuplicates);
   bool _handled = false;
   String? _hint;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -80,6 +80,30 @@ class _JoinScannerSheetState extends State<_JoinScannerSheet> {
   Widget build(BuildContext context) {
     final c = context.colors;
     final side = (MediaQuery.sizeOf(context).shortestSide - DaloySpace.s5 * 2).clamp(220.0, 420.0);
+    final controller = _controller;
+    if (controller == null) {
+      return SheetFrame(
+        title: 'Join a workspace',
+        description: 'Copy the join link an admin shared, then paste it here.',
+        children: [
+          if (_hint != null) ...[
+            Text(
+              _hint!,
+              textAlign: TextAlign.center,
+              style: context.text.bodySmall!.copyWith(color: c.destructive),
+            ),
+            const SizedBox(height: DaloySpace.s4),
+          ],
+          DaloyButton(
+            label: 'Paste link',
+            icon: TablerIcons.clipboard,
+            size: ControlSize.lg,
+            expand: true,
+            onPressed: _paste,
+          ),
+        ],
+      );
+    }
     return SheetFrame(
       title: 'Scan to join',
       description: 'Point the camera at the QR code an admin is showing.',
@@ -90,7 +114,7 @@ class _JoinScannerSheetState extends State<_JoinScannerSheet> {
             child: ClipRRect(
               borderRadius: DaloyRadii.all(DaloyRadii.xl2),
               child: MobileScanner(
-                controller: _controller,
+                controller: controller,
                 onDetect: (capture) {
                   final value = capture.barcodes.map((b) => b.rawValue).whereType<String>().firstOrNull;
                   if (value != null) _open(value);

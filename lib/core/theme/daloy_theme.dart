@@ -94,6 +94,7 @@ abstract final class DaloyTheme {
         builders: {
           TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         },
       ),
     );

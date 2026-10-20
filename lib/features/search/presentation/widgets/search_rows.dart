@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/daloy_theme.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/platform.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../../line_ups/domain/line_up.dart';
 import '../../../songs/domain/song.dart';
@@ -62,7 +63,7 @@ class SearchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     return Semantics(
       button: true,
       label: semanticLabel,
@@ -70,7 +71,7 @@ class SearchRow extends StatelessWidget {
         color: active ? c.muted : Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          splashFactory: isIOS ? NoSplash.splashFactory : null,
+          splashFactory: isApple ? NoSplash.splashFactory : null,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s4, vertical: DaloySpace.s2_5),
             child: Row(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
 import 'daloy_button.dart';
 import 'daloy_top_bar.dart';
 import 'split_view.dart';
@@ -60,7 +61,7 @@ class HeroTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isApple = Theme.of(context).platform.isApple;
     final top = MediaQuery.paddingOf(context).top;
     // In a split view's pane: nothing to go back to, and (under the shell's
     // tab capsule) no inline title; clear of the shell's trailing controls.
@@ -88,7 +89,7 @@ class HeroTopBar extends StatelessWidget {
               const SizedBox(width: DaloySpace.s3)
             else
               TopBarIconButton(
-                icon: isIOS ? TablerIcons.chevron_left : TablerIcons.arrow_left,
+                icon: isApple ? TablerIcons.chevron_left : TablerIcons.arrow_left,
                 tooltip: 'Back',
                 onPressed: onBack,
               ),
@@ -106,7 +107,7 @@ class HeroTopBar extends StatelessWidget {
                       title ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      textAlign: isIOS ? TextAlign.center : TextAlign.start,
+                      textAlign: isApple ? TextAlign.center : TextAlign.start,
                       style: context.text.titleLarge,
                     ),
                   ),
