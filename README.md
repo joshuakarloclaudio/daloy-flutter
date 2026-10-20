@@ -30,6 +30,10 @@ the device's browser must reach the API on that same host. That works as-is on t
 simulator; on an Android emulator run `adb reverse tcp:8000 tcp:8000` and use
 `API_BASE_URL=http://localhost:8000`.
 
+Windows can't take a `daloy://` link back, so there "Continue with Google" opens the default
+browser with `?client=desktop`, and the API redirects to a loopback address the app listens on
+while signing in (`http://localhost:43823/auth/google/callback`, `DESKTOP_OAUTH_CALLBACK_URL`).
+
 Keep `dart run build_runner watch` running while you develop.
 
 ### Desktop (macOS, Windows)
@@ -51,8 +55,6 @@ development with C++" workload (`flutter doctor` checks it). Windows doesn't hav
 
 - **YouTube in the app.** `webview_flutter` has no Windows side, so YouTube links open in the
   browser (`hasInAppPlayer` in `lib/core/utils/platform.dart`).
-- **Google sign-in.** `flutter_web_auth_2` returns through `http://localhost` on Windows, which
-  the API doesn't redirect to; sign in with email.
 - **Present on a second screen, Spotlight-style search, native alerts.** These are Swift on the
   Mac (`macos/Runner`), with no Windows port; Present shows the slides in the app's window.
 

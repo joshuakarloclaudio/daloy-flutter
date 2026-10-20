@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/network_providers.dart';
+import '../../../core/utils/platform.dart';
 import '../domain/account_deletion_preview.dart';
 import '../domain/auth_user.dart';
 
@@ -69,8 +70,10 @@ class AuthService {
       _api.delete('/api/auth/me', body: {'password': ?password, 'confirm_email': ?confirmEmail});
 
   /// Opened in a system auth session. `client=mobile` makes the API redirect
-  /// back to [AppConfig.oauthCallbackScheme] instead of the web app.
-  static Uri googleRedirectUrl() => Uri.parse('${AppConfig.apiBaseUrl}/api/auth/google/redirect?client=mobile');
+  /// back to [AppConfig.oauthCallbackScheme] instead of the web app;
+  /// `client=desktop` (Windows) to [AppConfig.desktopOAuthCallback].
+  static Uri googleRedirectUrl() =>
+      Uri.parse('${AppConfig.apiBaseUrl}/api/auth/google/redirect?client=${isWindows ? 'desktop' : 'mobile'}');
 }
 
 @Riverpod(keepAlive: true)

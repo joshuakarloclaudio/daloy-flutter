@@ -15,6 +15,11 @@ abstract final class AppConfig {
   /// AndroidManifest.xml; iOS needs no registration for an auth session.
   static const oauthCallbackScheme = 'daloy';
 
+  /// Where Google sign-in lands on Windows, which can't take a custom scheme
+  /// back: the app listens on this loopback port while signing in. Matches
+  /// the API's `DESKTOP_OAUTH_CALLBACK_URL` (`?client=desktop`).
+  static const desktopOAuthCallback = 'http://localhost:43823';
+
   static const requestTimeout = Duration(seconds: 30);
 
   /// How long an unused connection to the API stays open for the next request.

@@ -1,3 +1,5 @@
+import 'dart:io' show SocketException;
+
 import 'package:flutter/services.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,23 +32,38 @@ class GoogleSignInException implements Exception {
 
 /// Runs the API's Google OAuth round-trip in a system auth session
 /// (ASWebAuthenticationSession / Custom Tab) and returns the one-time
-/// exchange key, or `null` if the user closed the sheet.
+/// exchange key, or `null` if the user closed the sheet. On Windows it's the
+/// default browser instead, coming back to [AppConfig.desktopOAuthCallback]
+/// on loopback (RFC 8252), since Windows can't return a custom scheme.
 class GoogleSignIn {
   const GoogleSignIn();
 
-  /// Not on Windows yet: `flutter_web_auth_2` can only return there through
-  /// an `http://localhost` callback, which the API doesn't redirect to.
-  static bool get available => !isWindows;
+  /// What the browser tab shows once Windows has the result.
+  static const _landingPage = '''
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Daloy</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif;color:#1f2937}</style>
+<script>setTimeout(function(){window.close()},1)</script>
+</head><body><p>Back to Daloy. You can close this tab.</p></body></html>
+''';
 
   Future<String?> authorize() async {
     final String callback;
     try {
       callback = await FlutterWebAuth2.authenticate(
         url: AuthService.googleRedirectUrl().toString(),
-        callbackUrlScheme: AppConfig.oauthCallbackScheme,
+        callbackUrlScheme: isWindows ? AppConfig.desktopOAuthCallback : AppConfig.oauthCallbackScheme,
+        // Google refuses sign-in inside an embedded WebView, so Windows uses
+        // the browser and a loopback server rather than the plugin's default.
+        options: isWindows
+            ? const FlutterWebAuth2Options(useWebview: false, landingPageHtml: _landingPage)
+            : const FlutterWebAuth2Options(),
       );
     } on PlatformException catch (e) {
       if (e.code == 'CANCELED') return null;
+      throw const GoogleSignInException(GoogleSignInException._genericMessage);
+    } on SocketException {
+      // Windows: something else holds the loopback port.
       throw const GoogleSignInException(GoogleSignInException._genericMessage);
     }
 
