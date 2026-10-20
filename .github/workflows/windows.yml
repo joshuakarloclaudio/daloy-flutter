@@ -42,6 +42,19 @@ jobs:
 
       - run: flutter build windows --release --dart-define-from-file=env.local.json
 
+      # windows/CMakeLists.txt copies the VC++ runtime in, so the app opens
+      # without the Redistributable; CMake only warns if it can't find it.
+      - name: Check the VC++ runtime shipped
+        shell: pwsh
+        run: |
+          $missing = @('vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll') |
+            Where-Object { -not (Test-Path "build/windows/x64/runner/Release/$_") }
+          if ($missing) {
+            Write-Error "Missing from the build: $($missing -join ', ')"
+            exit 1
+          }
+          Get-ChildItem build/windows/x64/runner/Release -Filter *.dll | Select-Object -ExpandProperty Name
+
       - uses: actions/upload-artifact@v7
         with:
           name: Daloy-windows-${{ github.sha }}

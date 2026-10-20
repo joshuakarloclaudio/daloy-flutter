@@ -45,7 +45,8 @@ pointer-sized controls, keyboard shortcuts (a menu bar on the Mac, Ctrl+ shortcu
 flutter run -d macos   --dart-define-from-file=env.local.json   # on a Mac
 flutter run -d windows --dart-define-from-file=env.local.json   # on Windows
 flutter build windows --release --dart-define-from-file=env.local.json
-# → build\windows\x64\runner\Release\ (Daloy.exe plus its DLLs and data\ folder; ship the whole folder)
+# → build\windows\x64\runner\Release\ (Daloy.exe plus its DLLs and data\ folder; ship the whole folder.
+#   The VC++ runtime DLLs are in it, so PCs don't need the Redistributable.)
 ```
 
 `env.local.json` isn't in git: copy `env.example.json` and fill in the API and Reverb hosts.
