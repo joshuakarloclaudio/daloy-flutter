@@ -7,14 +7,16 @@ import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 import '../../core/analytics/analytics.dart';
 import '../../core/prefs/device_prefs.dart';
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
 import '../../shared/widgets/daloy_menu.dart';
 import '../../shared/widgets/daloy_switch.dart';
 import '../../shared/widgets/daloy_toast.dart';
 import '../../shared/widgets/settings_group.dart';
 import 'lock_authenticator.dart';
 
-/// Profile → Privacy: lock the app behind the phone's own check, and how long
-/// it may stay in the background before asking again.
+/// Profile → Privacy: lock the app behind the device's own check, and how
+/// long it may stay in the background (on the Mac: hidden or minimized)
+/// before asking again.
 class LockSettingsRows extends ConsumerWidget {
   const LockSettingsRows({super.key});
 
@@ -33,7 +35,12 @@ class LockSettingsRows extends ConsumerWidget {
       final messenger = ScaffoldMessenger.of(context);
       final analytics = ref.read(analyticsProvider);
       if (!await authenticator.isSupported()) {
-        showDaloyToast(messenger, 'Set up Face ID, a fingerprint or a passcode in Settings first.');
+        showDaloyToast(
+          messenger,
+          isMacOS
+              ? 'Set up Touch ID or a login password in System Settings first.'
+              : 'Set up Face ID, a fingerprint or a passcode in Settings first.',
+        );
         return;
       }
       // Proves it works before it can lock you out.

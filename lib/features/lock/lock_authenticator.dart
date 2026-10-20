@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../core/utils/platform.dart';
+
 part 'lock_authenticator.g.dart';
 
 /// The device's own "is it you?" check — Face ID, a fingerprint, or the
@@ -20,17 +22,19 @@ class LockAuthenticator {
     }
   }
 
-  /// "Face ID", "Touch ID", "Fingerprint" or just "Passcode" — what to call it.
+  /// "Face ID", "Touch ID", "Fingerprint" or just "Passcode" (the Mac's
+  /// login "Password") — what to call it.
   Future<String> label() async {
-    final ios = defaultTargetPlatform == TargetPlatform.iOS;
+    final apple = defaultTargetPlatform.isApple;
     try {
       final types = await _auth.getAvailableBiometrics();
-      if (types.contains(BiometricType.face)) return ios ? 'Face ID' : 'Face unlock';
-      if (types.contains(BiometricType.fingerprint)) return ios ? 'Touch ID' : 'Fingerprint';
+      if (types.contains(BiometricType.face)) return apple ? 'Face ID' : 'Face unlock';
+      if (types.contains(BiometricType.fingerprint)) return apple ? 'Touch ID' : 'Fingerprint';
     } on Object {
       // Fall through to the passcode.
     }
-    return ios ? 'Passcode' : 'Screen lock';
+    if (isMacOS) return 'Password';
+    return apple ? 'Passcode' : 'Screen lock';
   }
 
   /// True once the person has proved who they are. A cancelled or failed

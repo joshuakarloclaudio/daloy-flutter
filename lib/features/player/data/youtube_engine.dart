@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart' as yt;
 
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/platform.dart';
 
 part 'youtube_engine.g.dart';
 
@@ -130,7 +131,9 @@ class IframeYouTubeEngine implements YouTubeEngine {
 
   @override
   Widget buildSurface(BuildContext context) {
-    unawaited(_controller.webViewController.setBackgroundColor(Colors.black));
+    // The Mac's WebView has no opacity switch, so it throws on this; it draws
+    // over black there anyway.
+    if (!isMacOS) unawaited(_controller.webViewController.setBackgroundColor(Colors.black));
     return WebViewWidget(controller: _controller.webViewController);
   }
 

@@ -174,8 +174,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    // The Mac has its own login, so no app lock there.
-                    if (!isMacOS) const _Section(label: 'Privacy', children: [LockSettingsRows()]),
+                    const _Section(label: 'Privacy', children: [LockSettingsRows()]),
                     _Section(
                       label: 'This device',
                       children: [

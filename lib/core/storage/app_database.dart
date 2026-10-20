@@ -1,6 +1,11 @@
+import 'dart:ui' show AppExitResponse;
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../utils/platform.dart';
 
 part 'app_database.g.dart';
 
@@ -525,5 +530,17 @@ abstract final class SearchIndexSchema {
 AppDatabase appDatabase(Ref ref) {
   final db = AppDatabase();
   ref.onDispose(db.close);
+  // Quitting the Mac app shuts Dart down, and SQLite's statement finalizers
+  // then crash on the database isolate (EXC_BAD_ACCESS in sqlite3_finalize).
+  // Closing first leaves them nothing to finalize. Phones are killed instead.
+  if (isMacOS) {
+    final exit = AppLifecycleListener(
+      onExitRequested: () async {
+        await db.close();
+        return AppExitResponse.exit;
+      },
+    );
+    ref.onDispose(exit.dispose);
+  }
   return db;
 }
