@@ -384,14 +384,15 @@ class _Hero extends StatelessWidget {
                             onPressed: onPresent,
                           ),
                         ),
-                        Expanded(
-                          child: QuietAction(
-                            icon: TablerIcons.headphones,
-                            label: 'Listen',
-                            dimmed: !state.canListen,
-                            onPressed: onListen,
+                        if (hasInAppPlayer)
+                          Expanded(
+                            child: QuietAction(
+                              icon: TablerIcons.headphones,
+                              label: 'Listen',
+                              dimmed: !state.canListen,
+                              onPressed: onListen,
+                            ),
                           ),
-                        ),
                         Expanded(
                           child: QuietAction(
                             icon: TablerIcons.adjustments_horizontal,

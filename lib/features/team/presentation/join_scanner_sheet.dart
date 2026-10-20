@@ -13,7 +13,7 @@ import '../../../shared/widgets/daloy_sheet.dart';
 import '../../../shared/widgets/sheet_frame.dart';
 
 /// Scan a workspace's join QR code (or paste its link) and open the join
-/// screen for it. The Mac has no camera to point, so there it only pastes.
+/// screen for it. A desktop has no camera to point, so there it only pastes.
 Future<void> showJoinScanner(BuildContext context) {
   final router = GoRouter.of(context);
   return showDaloySheet<void>(
@@ -39,7 +39,7 @@ class _JoinScannerSheet extends StatefulWidget {
 }
 
 class _JoinScannerSheetState extends State<_JoinScannerSheet> {
-  final _controller = isMacOS
+  final _controller = isDesktop
       ? null
       : MobileScannerController(formats: const [BarcodeFormat.qrCode], detectionSpeed: DetectionSpeed.noDuplicates);
   bool _handled = false;

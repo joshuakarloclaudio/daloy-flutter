@@ -11,6 +11,7 @@ import '../../../core/device/screen_awake.dart';
 import '../../../core/prefs/device_prefs.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_alert.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_toast.dart';
@@ -859,7 +860,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
     final width = media.size.width;
     final player = ref.watch(musicPlayerProvider.select((s) => (open: s.isOpen, here: s.isPlayingFrom(widget.source))));
     final strip = player.open ? performPlayerStripHeight : 0.0;
-    final canPlayAlong = !player.here && state.songs.any((song) => song.row.hasYoutube);
+    final canPlayAlong = hasInAppPlayer && !player.here && state.songs.any((song) => song.row.hasYoutube);
     final gutter = width >= DaloyBreakpoints.tablet ? DaloySpace.s6 : DaloySpace.s1;
     final contentPadding = EdgeInsets.fromLTRB(
       gutter + media.padding.left,

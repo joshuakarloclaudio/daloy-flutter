@@ -20,6 +20,8 @@ String presentDeviceName(BuildContext context, String? userName) {
   final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
   final kind = Platform.isMacOS
       ? 'Mac'
+      : Platform.isWindows
+      ? 'PC'
       : Platform.isIOS
       ? (tablet ? 'iPad' : 'iPhone')
       : (tablet ? 'tablet' : 'phone');

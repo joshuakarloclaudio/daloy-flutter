@@ -1,4 +1,4 @@
-# Daloy — Flutter app (Android, iOS/iPadOS)
+# Daloy — Flutter app (Android, iOS/iPadOS, macOS, Windows)
 
 The native app, built on the same conventions as the React Router SPA in `/frontend`.
 
@@ -31,6 +31,30 @@ simulator; on an Android emulator run `adb reverse tcp:8000 tcp:8000` and use
 `API_BASE_URL=http://localhost:8000`.
 
 Keep `dart run build_runner watch` running while you develop.
+
+### Desktop (macOS, Windows)
+
+Both get the desktop shell (`lib/shell/desktop_shell.dart`): a sidebar instead of tab bars,
+pointer-sized controls, keyboard shortcuts (a menu bar on the Mac, Ctrl+ shortcuts on Windows).
+
+```sh
+flutter run -d macos   --dart-define-from-file=env.local.json   # on a Mac
+flutter run -d windows --dart-define-from-file=env.local.json   # on Windows
+flutter build windows --release --dart-define-from-file=env.local.json
+# → build\windows\x64\runner\Release\ (Daloy.exe plus its DLLs and data\ folder; ship the whole folder)
+```
+
+`env.local.json` isn't in git: copy `env.example.json` and fill in the API and Reverb hosts.
+
+Building for Windows needs a Windows machine with Visual Studio 2022 and the "Desktop
+development with C++" workload (`flutter doctor` checks it). Windows doesn't have these yet:
+
+- **YouTube in the app.** `webview_flutter` has no Windows side, so YouTube links open in the
+  browser (`hasInAppPlayer` in `lib/core/utils/platform.dart`).
+- **Google sign-in.** `flutter_web_auth_2` returns through `http://localhost` on Windows, which
+  the API doesn't redirect to; sign in with email.
+- **Present on a second screen, Spotlight-style search, native alerts.** These are Swift on the
+  Mac (`macos/Runner`), with no Windows port; Present shows the slides in the app's window.
 
 ## Stack
 

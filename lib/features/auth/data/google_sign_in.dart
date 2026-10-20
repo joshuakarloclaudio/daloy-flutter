@@ -3,6 +3,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/platform.dart';
 import 'auth_service.dart';
 
 part 'google_sign_in.g.dart';
@@ -32,6 +33,10 @@ class GoogleSignInException implements Exception {
 /// exchange key, or `null` if the user closed the sheet.
 class GoogleSignIn {
   const GoogleSignIn();
+
+  /// Not on Windows yet: `flutter_web_auth_2` can only return there through
+  /// an `http://localhost` callback, which the API doesn't redirect to.
+  static bool get available => !isWindows;
 
   Future<String?> authorize() async {
     final String callback;

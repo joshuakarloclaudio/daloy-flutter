@@ -9,6 +9,7 @@ import '../../../core/theme/daloy_theme.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_text_field.dart';
 import '../application/auth_form_controllers.dart';
+import '../data/google_sign_in.dart';
 import 'widgets/auth_layout.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -60,10 +61,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         onPressed: () => context.go(Routes.signIn),
       ),
       children: [
-        GoogleSignInButton(loading: form.googlePending, onPressed: form.busy ? null : controller.continueWithGoogle),
-        const SizedBox(height: DaloySpace.s5),
-        const AuthDivider(),
-        const SizedBox(height: DaloySpace.s5),
+        if (GoogleSignIn.available) ...[
+          GoogleSignInButton(loading: form.googlePending, onPressed: form.busy ? null : controller.continueWithGoogle),
+          const SizedBox(height: DaloySpace.s5),
+          const AuthDivider(),
+          const SizedBox(height: DaloySpace.s5),
+        ],
         if (form.formError != null) ...[AuthNotice(form.formError!), const SizedBox(height: DaloySpace.s5)],
         AutofillGroup(
           child: Column(

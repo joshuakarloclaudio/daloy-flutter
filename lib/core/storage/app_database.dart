@@ -530,10 +530,11 @@ abstract final class SearchIndexSchema {
 AppDatabase appDatabase(Ref ref) {
   final db = AppDatabase();
   ref.onDispose(db.close);
-  // Quitting the Mac app shuts Dart down, and SQLite's statement finalizers
-  // then crash on the database isolate (EXC_BAD_ACCESS in sqlite3_finalize).
-  // Closing first leaves them nothing to finalize. Phones are killed instead.
-  if (isMacOS) {
+  // Quitting a desktop app shuts Dart down, and SQLite's statement
+  // finalizers then crash on the database isolate (EXC_BAD_ACCESS in
+  // sqlite3_finalize on the Mac). Closing first leaves them nothing to
+  // finalize. Phones are killed instead.
+  if (isDesktop) {
     final exit = AppLifecycleListener(
       onExitRequested: () async {
         await db.close();

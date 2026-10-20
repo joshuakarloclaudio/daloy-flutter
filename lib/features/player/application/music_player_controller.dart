@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/analytics/analytics.dart';
 import '../../../core/connectivity/online_status.dart';
+import '../../../core/utils/platform.dart';
 import '../../auth/application/session_controller.dart';
 import '../../line_ups/application/line_up_detail_controller.dart';
 import '../../perform/application/perform_controller.dart';
@@ -235,6 +236,7 @@ class MusicPlayer extends _$MusicPlayer {
   /// Plays [source] from [start] (its index in the set), or from the first
   /// song with a link. Already playing it: goes to [start] if given.
   void open(PerformSource source, {int? start, bool play = true}) {
+    if (!hasInAppPlayer) return;
     if (state.source == source && state.isOpen) {
       if (start != null && start != state.currentIndex && state.canPlay(state.tracks[start])) {
         _select(start, play: play, change: TrackChange.player);

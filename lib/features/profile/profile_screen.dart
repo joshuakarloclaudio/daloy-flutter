@@ -139,7 +139,7 @@ class ProfileScreen extends ConsumerWidget {
                         SettingsRow(
                           leading: const SettingsGlyph(TablerIcons.qrcode),
                           title: 'Join a workspace',
-                          subtitle: isMacOS ? 'Paste a join link' : 'Scan a code or paste a link',
+                          subtitle: isDesktop ? 'Paste a join link' : 'Scan a code or paste a link',
                           onTap: () => showJoinScanner(context),
                         ),
                       ],
@@ -208,8 +208,8 @@ class ProfileScreen extends ConsumerWidget {
                     _Section(
                       label: 'About',
                       children: [
-                        // The App Store updates the Mac app.
-                        if (isMacOS)
+                        // The desktop apps update through their store.
+                        if (isDesktop)
                           SettingsRow(
                             leading: const SettingsGlyph(TablerIcons.info_circle),
                             title: 'Version',

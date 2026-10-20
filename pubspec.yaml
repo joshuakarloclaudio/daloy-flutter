@@ -1,5 +1,5 @@
 name: daloy_flutter
-description: "Daloy — worship music management for Android, iOS/iPadOS and macOS."
+description: "Daloy — worship music management for Android, iOS/iPadOS, macOS and Windows."
 publish_to: 'none'
 version: 1.0.1+5
 
@@ -94,6 +94,11 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/icon/icon_macos.png"
+  # Same rounded square as the Mac: Windows draws no shape either.
+  windows:
+    generate: true
+    image_path: "assets/icon/icon_macos.png"
+    icon_size: 256
 
 # Native splash — regenerate with `dart run flutter_native_splash:create`.
 # Brand green with the white wave mark (assets/icon/foreground.png, resized

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/flow_artwork.dart';
@@ -562,7 +563,11 @@ class _Controls extends StatelessWidget {
         ),
         if (state.hasStreamingLinks) ...[
           const SizedBox(height: DaloySpace.s2),
-          SongStreamingLinks(song: state.song!, onPlayYouTube: () => context.push(Routes.songListen(state.song!.id))),
+          SongStreamingLinks(
+            song: state.song!,
+            // Without the in-app player (Windows), YouTube opens in the browser.
+            onPlayYouTube: hasInAppPlayer ? () => context.push(Routes.songListen(state.song!.id)) : null,
+          ),
         ],
       ],
     );

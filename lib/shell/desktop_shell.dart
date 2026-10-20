@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 
 import '../core/theme/daloy_theme.dart';
+import '../core/utils/platform.dart';
 import '../features/auth/application/session_controller.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/workspaces/data/workspaces_repository.dart';
@@ -15,9 +16,10 @@ import 'tablet_shell.dart' show tabletTabs;
 
 const _profileBranch = 3;
 
-/// The Mac's frame, after the web's desktop shell: a flat sidebar on the
-/// left (workspace, Search ⌘K, the destinations, you at the bottom) and the
-/// screen beside it. ⌘\ collapses it to an icon rail; its edge drags to
+/// The desktop's frame (the Mac, Windows), after the web's desktop shell: a
+/// flat sidebar on the left (workspace, Search ⌘K, the destinations, you at
+/// the bottom) and the screen beside it. ⌘\ (Ctrl+\ on Windows) collapses it
+/// to an icon rail; its edge drags to
 /// resize, clicks to collapse and double-clicks back to the default width.
 /// Search lives here, so tab screens leave out their magnifier
 /// ([TabletChrome]), and their bars keep their titles.
@@ -62,7 +64,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
 
   bool _onKey(KeyEvent event) {
     if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.backslash) return false;
-    if (!HardwareKeyboard.instance.isMetaPressed) return false;
+    final keyboard = HardwareKeyboard.instance;
+    if (!(isMacOS ? keyboard.isMetaPressed : keyboard.isControlPressed)) return false;
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return false;
     ref.read(desktopSidebarProvider.notifier).toggle();
     return true;
@@ -223,7 +226,7 @@ class _Sidebar extends ConsumerWidget {
     final toggle = _SidebarRow(
       icon: collapsed ? TablerIcons.layout_sidebar_left_expand : TablerIcons.layout_sidebar_left_collapse,
       label: collapsed ? 'Expand sidebar' : 'Collapse sidebar',
-      shortcut: '⌘\\',
+      shortcut: '$shortcutModifier\\',
       collapsed: true,
       muted: true,
       onTap: onToggle,
@@ -274,7 +277,7 @@ class _Sidebar extends ConsumerWidget {
                 _SidebarRow(
                   icon: TablerIcons.search,
                   label: 'Search',
-                  shortcut: '⌘K',
+                  shortcut: '${shortcutModifier}K',
                   collapsed: collapsed,
                   onTap: () => openSearch(context),
                 ),

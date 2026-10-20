@@ -15,7 +15,7 @@ import '../../shared/widgets/settings_group.dart';
 import 'lock_authenticator.dart';
 
 /// Profile → Privacy: lock the app behind the device's own check, and how
-/// long it may stay in the background (on the Mac: hidden or minimized)
+/// long it may stay in the background (on the desktop: hidden or minimized)
 /// before asking again.
 class LockSettingsRows extends ConsumerWidget {
   const LockSettingsRows({super.key});
@@ -39,6 +39,8 @@ class LockSettingsRows extends ConsumerWidget {
           messenger,
           isMacOS
               ? 'Set up Touch ID or a login password in System Settings first.'
+              : isWindows
+              ? 'Set up Windows Hello in Settings first.'
               : 'Set up Face ID, a fingerprint or a passcode in Settings first.',
         );
         return;

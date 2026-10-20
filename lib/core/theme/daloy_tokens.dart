@@ -51,8 +51,8 @@ abstract final class DaloyBreakpoints {
 }
 
 /// One height scale for every control: the web's `pointer-coarse` values
-/// on touch screens, one notch down (32/36/40) on the Mac, where a pointer
-/// does the aiming. Never override a height at the call site.
+/// on touch screens, one notch down (32/36/40) on the desktop, where a
+/// pointer does the aiming. Never override a height at the call site.
 enum ControlSize {
   sm(40, 32),
   md(44, 36),
@@ -62,7 +62,7 @@ enum ControlSize {
   final double _touch;
   final double _pointer;
 
-  double get height => isMacOS ? _pointer : _touch;
+  double get height => isDesktop ? _pointer : _touch;
 }
 
 /// Shell chrome dimensions.

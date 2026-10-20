@@ -8,6 +8,7 @@ analyzer:
     - android/**
     - ios/**
     - macos/**
+    - windows/**
   errors:
     invalid_annotation_target: ignore
 

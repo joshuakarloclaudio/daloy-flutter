@@ -23,8 +23,10 @@ class LockAuthenticator {
   }
 
   /// "Face ID", "Touch ID", "Fingerprint" or just "Passcode" (the Mac's
-  /// login "Password") — what to call it.
+  /// login "Password", "Windows Hello") — what to call it.
   Future<String> label() async {
+    // Windows Hello is the face, the fingerprint and the PIN alike.
+    if (isWindows) return 'Windows Hello';
     final apple = defaultTargetPlatform.isApple;
     try {
       final types = await _auth.getAvailableBiometrics();
