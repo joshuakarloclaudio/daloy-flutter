@@ -1,8 +1,13 @@
-# Builds the Windows app (README → Desktop) and uploads the Release folder:
-# Daloy.exe with its DLLs and data\, all of which ship together.
+# Builds the Windows app (README → Desktop) and uploads the Release folder
+# (Daloy.exe with its DLLs and data\, for testing with Smart App Control off)
+# and the Microsoft Store package (Daloy.msix, to upload in Partner Center).
 #
 # Needs the repository secret DALOY_ENV_JSON: the contents of env.local.json
-# (git-ignored), passed to the build as --dart-define-from-file.
+# (git-ignored), passed to the build as --dart-define-from-file. The Store
+# package also needs the repository variables MSIX_IDENTITY_NAME,
+# MSIX_PUBLISHER and MSIX_PUBLISHER_DISPLAY_NAME (Partner Center → the app →
+# Product identity: Package/Identity/Name, Package/Identity/Publisher and
+# Package/Properties/PublisherDisplayName).
 name: Windows build
 
 on:
@@ -54,6 +59,25 @@ jobs:
             exit 1
           }
           Get-ChildItem build/windows/x64/runner/Release -Filter *.dll | Select-Object -ExpandProperty Name
+
+      # The Store package (pubspec → msix_config). Its identity comes from
+      # Partner Center → Product identity, kept in repository variables;
+      # skipped until they're set.
+      - name: Package for the Microsoft Store
+        if: vars.MSIX_IDENTITY_NAME != ''
+        run: >
+          dart run msix:create
+          --identity-name "${{ vars.MSIX_IDENTITY_NAME }}"
+          --publisher "${{ vars.MSIX_PUBLISHER }}"
+          --publisher-display-name "${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}"
+
+      - uses: actions/upload-artifact@v7
+        if: vars.MSIX_IDENTITY_NAME != ''
+        with:
+          name: Daloy-msix-${{ github.sha }}
+          path: build/msix/Daloy.msix
+          if-no-files-found: error
+          retention-days: 30
 
       - uses: actions/upload-artifact@v7
         with:

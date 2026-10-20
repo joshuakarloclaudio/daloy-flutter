@@ -51,6 +51,12 @@ flutter build windows --release --dart-define-from-file=env.local.json
 
 `env.local.json` isn't in git: copy `env.example.json` and fill in the API and Reverb hosts.
 
+The Release folder is unsigned, so Smart App Control blocks it; it's for testing only. Windows
+ships through the Microsoft Store, which signs the package: `.github/workflows/windows.yml` builds
+`Daloy.msix` (`msix_config` in `pubspec.yaml`) once the `MSIX_*` repository variables hold the
+app's Partner Center identity, and that file is what gets uploaded as a submission. Bump
+`version`'s major.minor.patch for each one: the Store ignores the `+build` number.
+
 Building for Windows needs a Windows machine with Visual Studio 2022 and the "Desktop
 development with C++" workload (`flutter doctor` checks it). Windows doesn't have these yet:
 
