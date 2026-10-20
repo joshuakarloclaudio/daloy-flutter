@@ -10,6 +10,7 @@ import '../../../core/analytics/analytics.dart';
 import '../../../core/device/screen_awake.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/daloy_spinner.dart';
@@ -99,6 +100,9 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
       }
     } else if (display == null && _onDisplay != null) {
       setState(() => _onDisplay = null);
+    } else if (display != null && display != _onDisplay) {
+      // Moved to another screen (the Mac), or the same one resized.
+      setState(() => _onDisplay = display);
     }
   }
 
@@ -147,6 +151,20 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
     onChanged: (look) => _apply(PresentSetLook(look)),
     anchor: anchor,
   );
+
+  /// The Mac can have several screens besides its own; pick the one for the slides.
+  Future<void> _chooseDisplay(BuildContext button) async {
+    final displays = await _display.all();
+    if (!button.mounted || displays.isEmpty) return;
+    final current = (displays.where((d) => d.selected).firstOrNull ?? displays.first).display;
+    final chosen = await showDaloyChoiceMenu<ExternalDisplay>(
+      button,
+      title: 'Show slides on',
+      options: [for (final d in displays) (d.display, d.display.name)],
+      current: current,
+    );
+    if (chosen != null && chosen != current) await _display.select(chosen);
+  }
 
   Future<void> _openRemote(Rect anchor) async {
     _hideTimer?.cancel();
@@ -226,7 +244,20 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
   }
 
   Widget _panel(PresentDeckState deck, ExternalDisplay display) => Scaffold(
-    appBar: DaloyTopBar(title: deck.title, actions: _actions(glass: false)),
+    appBar: DaloyTopBar(
+      title: deck.title,
+      actions: [
+        if (isMacOS)
+          Builder(
+            builder: (button) => TopBarIconButton(
+              icon: TablerIcons.device_desktop,
+              tooltip: 'Output display',
+              onPressed: () => _chooseDisplay(button),
+            ),
+          ),
+        ..._actions(glass: false),
+      ],
+    ),
     body: SafeArea(
       top: false,
       child: PresentControlPanel(

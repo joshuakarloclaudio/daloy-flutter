@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
 import 'daloy_glass.dart';
 import 'pressable.dart';
 
@@ -31,7 +32,8 @@ class DaloyAlertAction<T> {
 const _channel = MethodChannel('pro.daloy.app/alert');
 
 /// A blocking question. On iOS it is a real `UIAlertController` (Liquid Glass
-/// on 26+, through `ios/Runner/AlertPlugin.swift`); elsewhere the same shape
+/// on 26+, through `ios/Runner/AlertPlugin.swift`), on macOS an `NSAlert`
+/// sheet (`macos/Runner/AlertPlugin.swift`); elsewhere the same shape
 /// drawn in Flutter: frosted, left-aligned, full-width capsule buttons, side
 /// by side for two and stacked for three or more.
 ///
@@ -132,7 +134,7 @@ Future<int?> _showNative(
   required List<DaloyAlertAction<Object?>> actions,
   required bool sheet,
 }) async {
-  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return _unavailable;
+  if (kIsWeb || !defaultTargetPlatform.isApple) return _unavailable;
   List<double>? anchor;
   final box = context.findRenderObject();
   if (sheet && box is RenderBox && box.attached) {

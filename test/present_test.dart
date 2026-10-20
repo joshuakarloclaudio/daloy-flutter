@@ -280,6 +280,47 @@ void main() {
       expect(find.text('2 / 2'), findsOneWidget);
     });
   });
+
+  group('display channel', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('test/present_displays');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    test('the Mac lists every screen, marks the chosen one, and switches by id', () async {
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return call.method == 'getDisplays'
+            ? [
+                {'id': 2, 'name': 'DELL U2720Q', 'width': 2560.0, 'height': 1440.0, 'selected': false},
+                {'id': 5, 'name': 'Epson Projector', 'width': 1920.0, 'height': 1080.0, 'selected': true},
+              ]
+            : null;
+      });
+      final display = PresentDisplayChannel(channel);
+
+      final all = await display.all();
+      expect([for (final d in all) d.display.name], ['DELL U2720Q', 'Epson Projector']);
+      expect([for (final d in all) d.selected], [false, true]);
+
+      await display.select(all.first.display);
+      expect(calls.last.method, 'select');
+      expect(calls.last.arguments, 2);
+    });
+
+    test('where there is only one external screen, it is the list', () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'getDisplays') throw MissingPluginException();
+        return {'name': 'LG TV', 'width': 1920.0, 'height': 1080.0};
+      });
+
+      final all = await PresentDisplayChannel(channel).all();
+      expect(all, hasLength(1));
+      expect(all.single.display, const ExternalDisplay(name: 'LG TV', width: 1920, height: 1080));
+      expect(all.single.selected, isTrue);
+    });
+  });
 }
 
 Future<void> _until(bool Function() done) async {
