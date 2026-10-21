@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/flow_artwork.dart';
 import '../../../shared/widgets/glass_buttons.dart';
@@ -260,12 +261,18 @@ class _Backdrop extends StatelessWidget {
   final double cover;
 
   @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 16 * cover, sigmaY: 16 * cover),
-      child: ColoredBox(color: Colors.black.withValues(alpha: 0.4 * cover)),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final dim = ColoredBox(color: Colors.black.withValues(alpha: 0.4 * cover));
+    // Only dimmed on Windows, where a full-screen blur stutters (DaloyGlass).
+    return IgnorePointer(
+      child: isWindows
+          ? dim
+          : BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16 * cover, sigmaY: 16 * cover),
+              child: dim,
+            ),
+    );
+  }
 }
 
 class _Header extends StatelessWidget {

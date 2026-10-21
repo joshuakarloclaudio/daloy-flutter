@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
 
 /// The fallback rendering of Liquid Glass: frosted blur, a tint of the page
 /// colour, a bright top sheen, a hairline edge and a soft shadow, so chrome
@@ -13,6 +14,11 @@ import '../../core/theme/daloy_theme.dart';
 /// Glass only floats: bars, buttons over content, menus, toasts, partial
 /// sheets. Content stays flat, and glass is never nested or put in a list.
 /// One [BackdropFilter] per instance.
+///
+/// Windows draws it solid: there the engine renders through ANGLE, where a
+/// backdrop blur is redone every frame anything under it moves, and the
+/// mini player and live bar sit over scrolling lists. The shadow and
+/// hairline stay, so it still floats.
 class DaloyGlass extends StatelessWidget {
   const DaloyGlass({
     super.key,
@@ -135,6 +141,7 @@ class DaloyGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final solid = flat || isWindows;
     final shape = circle ? BoxShape.circle : BoxShape.rectangle;
     final radius = circle ? null : borderRadius;
     final edge =
@@ -148,6 +155,8 @@ class DaloyGlass extends StatelessWidget {
         borderRadius: radius,
         color: flat
             ? (tint ?? c.background)
+            : isWindows
+            ? (tint ?? (dark ? c.card : c.background))
             : (tint ?? (dark ? c.card : c.background)).withValues(alpha: tintAlpha ?? (dark ? 0.55 : 0.5)),
       ),
       child: DecoratedBox(
@@ -155,7 +164,7 @@ class DaloyGlass extends StatelessWidget {
           shape: shape,
           borderRadius: radius,
           border: edge,
-          gradient: flat || !sheen
+          gradient: solid || !sheen
               ? null
               : LinearGradient(
                   begin: Alignment.topCenter,
@@ -170,7 +179,7 @@ class DaloyGlass extends StatelessWidget {
       ),
     );
 
-    Widget frosted = flat ? surface : BackdropFilter(filter: _backdrop, child: surface);
+    Widget frosted = solid ? surface : BackdropFilter(filter: _backdrop, child: surface);
     frosted = circle ? ClipOval(child: frosted) : ClipRRect(borderRadius: radius ?? BorderRadius.zero, child: frosted);
 
     if (!shadow || flat) return frosted;

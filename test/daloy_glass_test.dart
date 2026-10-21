@@ -1,5 +1,6 @@
 import 'package:daloy_flutter/core/theme/daloy_theme.dart';
 import 'package:daloy_flutter/shared/widgets/daloy_glass.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -28,5 +29,13 @@ void main() {
   testWidgets('flat drops the blur for a solid fill (e-ink)', (tester) async {
     await tester.pumpWidget(_app(const DaloyGlass.capsule(flat: true, child: SizedBox(width: 120, height: 40))));
     expect(find.byType(BackdropFilter), findsNothing);
+  });
+
+  testWidgets('Windows draws it solid but keeps the shadow', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    await tester.pumpWidget(_app(const DaloyGlass.capsule(child: SizedBox(width: 120, height: 40))));
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.descendant(of: find.byType(DaloyGlass), matching: find.byType(CustomPaint)), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
   });
 }
