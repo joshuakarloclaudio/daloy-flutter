@@ -55,7 +55,7 @@ The Release folder is unsigned, so Smart App Control blocks it; it's for testing
 ships through the Microsoft Store, which signs the package: `.github/workflows/windows.yml` builds
 `Daloy.msix` (`msix_config` in `pubspec.yaml`) once the `MSIX_*` repository variables hold the
 app's Partner Center identity, and that file is what gets uploaded as a submission. Bump
-`version`'s major.minor.patch for each one: the Store ignores the `+build` number.
+`msix_config: msix_version` for each one (the last part stays 0); `version` is the phones'.
 
 Building for Windows needs a Windows machine with Visual Studio 2022 and the "Desktop
 development with C++" workload (`flutter doctor` checks it). Windows doesn't have these yet:
