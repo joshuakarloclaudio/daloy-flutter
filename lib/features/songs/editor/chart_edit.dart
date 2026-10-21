@@ -210,6 +210,18 @@ Edited insertRepeatMarker(String content, int cursor, int count) {
   return insertAt(content, cursor, '${needsSpace ? ' ' : ''}x$count');
 }
 
+/// A bar's time signature (`2/4`), set apart by spaces. A line with no
+/// barline yet gets one first — off a bar line, `2/4` is just text.
+Edited insertMeterMarker(String content, int cursor, String signature) {
+  final lineStart = cursor == 0 ? 0 : content.lastIndexOf('\n', cursor - 1) + 1;
+  final hasBar = content.substring(lineStart, cursor).contains('|');
+  final before = cursor > 0 ? content[cursor - 1] : null;
+  final after = cursor < content.length ? content[cursor] : null;
+  final needsSpace = before != null && before != '\n' && before != ' ';
+  final lead = hasBar ? (needsSpace ? ' ' : '') : '${needsSpace ? ' ' : ''}| ';
+  return insertAt(content, cursor, '$lead$signature${after == ' ' ? '' : ' '}');
+}
+
 // -- Paste ----------------------------------------------------------------
 
 final _bassNote = RegExp(r'^[A-Ga-g][b#]?$');

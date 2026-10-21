@@ -13,7 +13,12 @@ part of 'present_display.dart';
 final presentDisplayChannelProvider = PresentDisplayChannelProvider._();
 
 final class PresentDisplayChannelProvider
-    extends $FunctionalProvider<PresentDisplayChannel, PresentDisplayChannel, PresentDisplayChannel>
+    extends
+        $FunctionalProvider<
+          PresentDisplayChannel,
+          PresentDisplayChannel,
+          PresentDisplayChannel
+        >
     with $Provider<PresentDisplayChannel> {
   PresentDisplayChannelProvider._()
     : super(
@@ -31,7 +36,9 @@ final class PresentDisplayChannelProvider
 
   @$internal
   @override
-  $ProviderElement<PresentDisplayChannel> $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
+  $ProviderElement<PresentDisplayChannel> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
   PresentDisplayChannel create(Ref ref) {
@@ -40,11 +47,15 @@ final class PresentDisplayChannelProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(PresentDisplayChannel value) {
-    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<PresentDisplayChannel>(value));
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PresentDisplayChannel>(value),
+    );
   }
 }
 
-String _$presentDisplayChannelHash() => r'8128b7a042db06fd6de15259753727f154b78352';
+String _$presentDisplayChannelHash() =>
+    r'8128b7a042db06fd6de15259753727f154b78352';
 
 /// The external screen, if one is connected — follows plugging in and out.
 
@@ -54,7 +65,12 @@ final externalDisplayProvider = ExternalDisplayProvider._();
 /// The external screen, if one is connected — follows plugging in and out.
 
 final class ExternalDisplayProvider
-    extends $FunctionalProvider<AsyncValue<ExternalDisplay?>, ExternalDisplay?, Stream<ExternalDisplay?>>
+    extends
+        $FunctionalProvider<
+          AsyncValue<ExternalDisplay?>,
+          ExternalDisplay?,
+          Stream<ExternalDisplay?>
+        >
     with $FutureModifier<ExternalDisplay?>, $StreamProvider<ExternalDisplay?> {
   /// The external screen, if one is connected — follows plugging in and out.
   ExternalDisplayProvider._()
@@ -73,7 +89,9 @@ final class ExternalDisplayProvider
 
   @$internal
   @override
-  $StreamProviderElement<ExternalDisplay?> $createElement($ProviderPointer pointer) => $StreamProviderElement(pointer);
+  $StreamProviderElement<ExternalDisplay?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
 
   @override
   Stream<ExternalDisplay?> create(Ref ref) {

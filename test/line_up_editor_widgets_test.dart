@@ -132,14 +132,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Written in G'), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.tap(find.bySemanticsLabel('Back'));
     await tester.pumpAndSettle();
     expect(find.text('Discard changes?'), findsOneWidget);
     await tester.tap(find.text('Keep editing'));
     await tester.pumpAndSettle();
     expect(find.text('Edit line-up'), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.tap(find.bySemanticsLabel('Back'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();

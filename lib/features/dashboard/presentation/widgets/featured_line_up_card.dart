@@ -13,11 +13,11 @@ import '../../../line_ups/domain/line_up.dart';
 import '../../../line_ups/presentation/widgets/line_up_cover.dart';
 
 /// "Up next" (`LineUpFeaturedCard`): the line-up's cover beside its name,
-/// then Perform and Practice. Its state shows in a full tinted border
-/// and a soft wash — never a colored side stripe:
-/// - **Today**: emerald border, emerald→teal wash, floating glow orbs, the
+/// then Perform and Practice. Its state shows in a faint tinted edge and a
+/// soft wash — never a hard ring or a colored side stripe:
+/// - **Today**: emerald edge, emerald→teal wash, floating glow orbs, the
 ///   pulsing Live Glow, and an emerald Perform button.
-/// - **Tomorrow**: teal-tinted border and wash.
+/// - **Tomorrow**: teal-tinted edge and wash.
 /// - Otherwise: plain card with the date.
 class FeaturedLineUpCard extends StatelessWidget {
   const FeaturedLineUpCard({
@@ -146,7 +146,7 @@ class FeaturedLineUpCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: DaloyRadii.all(DaloyRadii.xl2),
-        border: Border.all(color: isTomorrow ? c.primary.withValues(alpha: 0.3) : c.border.withValues(alpha: 0.7)),
+        border: Border.all(color: isTomorrow ? c.primary.withValues(alpha: 0.14) : c.border.withValues(alpha: 0.7)),
         color: isTomorrow ? null : c.card,
         gradient: isTomorrow
             ? LinearGradient(
@@ -196,6 +196,7 @@ class _TodayFrameState extends State<_TodayFrame> with SingleTickerProviderState
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: _controller,
       child: widget.child,
@@ -206,19 +207,19 @@ class _TodayFrameState extends State<_TodayFrame> with SingleTickerProviderState
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             borderRadius: DaloyRadii.all(DaloyRadii.xl2),
-            border: Border.all(color: c.todayBorder),
+            // A faint edge, not a ring: the breathing glow carries "today".
+            border: Border.all(color: c.today.withValues(alpha: dark ? 0.16 : 0.24)),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [Color.alphaBlend(c.todayWashFrom, c.card), c.card, Color.alphaBlend(c.todayWashTo, c.card)],
             ),
             boxShadow: [
-              BoxShadow(color: c.today.withValues(alpha: 0.35 + 0.25 * glow), spreadRadius: 1),
               BoxShadow(
-                color: c.today.withValues(alpha: 0.25 + 0.2 * glow),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-                spreadRadius: -4,
+                color: c.today.withValues(alpha: (dark ? 0.12 : 0.18) + 0.12 * glow),
+                blurRadius: 24,
+                offset: const Offset(0, 6),
+                spreadRadius: -6,
               ),
             ],
           ),

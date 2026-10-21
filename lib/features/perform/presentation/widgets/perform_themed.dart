@@ -70,6 +70,19 @@ class PerformGlass extends StatelessWidget {
 
 /// Every panel Perform opens. Up from the bottom on a phone, where the thumb
 /// is; in from the right on a tablet, so the chart stays readable beside it.
+/// A bottom sheet in Perform's palette whose [builder] draws its own surface
+/// — for a sheet shaped unlike [showPerformSheet]'s, such as the cue chat.
+Future<T?> showPerformModal<T>(BuildContext context, {required WidgetBuilder builder, BoxConstraints? constraints}) =>
+    showModalBottomSheet<T>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      constraints: constraints,
+      builder: (_) => PerformThemed(child: Builder(builder: builder)),
+    );
+
 Future<T?> showPerformSheet<T>(
   BuildContext context, {
   required String title,
@@ -85,15 +98,11 @@ Future<T?> showPerformSheet<T>(
   );
 
   if (!wide) {
-    return showModalBottomSheet<T>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      // The body draws its own surface, in the Perform theme.
-      backgroundColor: Colors.transparent,
-      elevation: 0,
+    return showPerformModal<T>(
+      context,
       constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * sheetMaxHeightFactor),
-      builder: body,
+      builder: (themed) =>
+          _PerformSheetBody(title: title, description: description, side: false, child: builder(themed)),
     );
   }
 

@@ -461,7 +461,13 @@ class SongsRepository {
     createdAt: row.createdAt,
     lastUsedAt: row.lastUsedAt,
     version: row.version,
+    updatedAt: row.updatedAt,
+    updatedBy: updatedByOf(row.updatedById, row.updatedByName),
   );
+
+  /// Who last changed a song or line-up, from its two cached columns.
+  static UserBrief? updatedByOf(int? id, String? name) =>
+      id == null || name == null ? null : UserBrief(id: id, name: name);
 
   /// The row for a server [Song]. A missing [Song.lastUsedAt] leaves the
   /// cached one alone: only the library list carries it.
@@ -484,6 +490,9 @@ class SongsRepository {
     createdAt: Value(s.createdAt),
     lastUsedAt: Value.absentIfNull(s.lastUsedAt),
     version: Value(s.version),
+    updatedAt: Value(s.updatedAt),
+    updatedById: Value(s.updatedBy?.id),
+    updatedByName: Value(s.updatedBy?.name),
   );
 }
 

@@ -80,7 +80,7 @@ final class PracticeControllerProvider
 }
 
 String _$practiceControllerHash() =>
-    r'a1bafd09b78ffcd58eddbab3c0f29fad876d4f55';
+    r'fcef3952fd78119cb275aecf8ae6096227fe1b5c';
 
 /// Practice's clock: Play/Pause runs the bar clock and the chord highlights;
 /// the click is a separate switch, so the chart can move with the metronome

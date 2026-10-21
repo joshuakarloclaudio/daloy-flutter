@@ -7,7 +7,7 @@ import '../../chart/nashville.dart';
 import '../../editor/chart_edit.dart';
 import '../../editor/editor_line.dart';
 import '../widgets/chart_format.dart';
-import '../widgets/chord_sheet.dart' show BarDivider, BeatDots, RepeatBadge;
+import '../widgets/chord_sheet.dart' show BarDivider, BeatDots, MeterBadge, RepeatBadge;
 
 /// The chart as the editor shows it, formatted like Perform and Practice (the
 /// shared [ChartFormat] and section label) but one source line per row, with
@@ -268,6 +268,7 @@ class _LineStyles {
         ),
         length,
       ),
+      PieceKind.meter => _widget(MeterBadge(signature: p.text, color: color, size: em), length),
       PieceKind.text when structured && _dots.hasMatch(p.text) => [
         for (var i = 0; i < length; i++)
           _box(

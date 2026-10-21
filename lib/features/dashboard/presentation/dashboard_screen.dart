@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
+import '../../line_ups/presentation/widgets/line_up_cover.dart';
+import '../../../shared/widgets/flow_artwork.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_menu.dart';
@@ -244,99 +246,110 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
     ];
 
+    final featured = page.featuredLineUp;
+
     return RegisterPrimaryAction(
       branch: 0,
       label: 'Create',
       icon: TablerIcons.plus,
       onPressed: create,
-      child: Scaffold(
-        appBar: DaloyTopBar(
-          // A tablet's shell already carries the workspace (top bar, sidebar);
-          // phones put the switcher in the bar.
-          title: isWide ? 'Home' : null,
-          titleWidget: isWide ? null : const WorkspaceSwitcherHeading(),
-          actions: [
-            // Background sync shows as a quiet spinner; pulling down is how
-            // you ask for one.
-            if (page.isSyncing && !_pulling)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: DaloySpace.s2),
-                child: DaloySpinner(size: 18),
-              ),
-            const TopBarSearchButton(),
-            // Line-ups can be created offline; they sync on reconnect. A phone
-            // has the detached + at the tab bar; a tablet has no tab bar.
-            if (isWide)
-              Builder(
-                builder: (buttonContext) => PrimaryActionButton(
-                  icon: TablerIcons.plus,
-                  label: 'Create',
-                  onPressed: () => create(anchorOf(buttonContext)),
+      child: _wash(
+        featured,
+        Scaffold(
+          backgroundColor: featured == null ? null : Colors.transparent,
+          appBar: DaloyTopBar(
+            washed: featured != null,
+            // A tablet's shell already carries the workspace (top bar, sidebar);
+            // phones put the switcher in the bar.
+            title: isWide ? 'Home' : null,
+            titleWidget: isWide ? null : const WorkspaceSwitcherHeading(),
+            actions: [
+              // Background sync shows as a quiet spinner; pulling down is how
+              // you ask for one.
+              if (page.isSyncing && !_pulling)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: DaloySpace.s2),
+                  child: DaloySpinner(size: 18),
                 ),
-              ),
-          ],
-        ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= DaloyBreakpoints.wide;
-            // Centre a capped column while keeping the scroll view (and its
-            // scrollbar and overscroll) full width.
-            final side = math.max(gutter, (constraints.maxWidth - DaloyBreakpoints.contentMaxWidth) / 2);
+              const TopBarSearchButton(),
+              // Line-ups can be created offline; they sync on reconnect. A phone
+              // has the detached + at the tab bar; a tablet has no tab bar.
+              if (isWide)
+                Builder(
+                  builder: (buttonContext) => PrimaryActionButton(
+                    icon: TablerIcons.plus,
+                    label: 'Create',
+                    onPressed: () => create(anchorOf(buttonContext)),
+                  ),
+                ),
+            ],
+          ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= DaloyBreakpoints.wide;
+              // Centre a capped column while keeping the scroll view (and its
+              // scrollbar and overscroll) full width.
+              final side = math.max(gutter, (constraints.maxWidth - DaloyBreakpoints.contentMaxWidth) / 2);
 
-            return PullToRefreshScrollView(
-              onRefresh: page.isOnline ? _pullRefresh : null,
-              slivers: [
-                SliverPadding(
-                  // Wider by the bleed, so Home's lists reach into the gutter;
-                  // everything else pads itself back in.
-                  padding: EdgeInsets.fromLTRB(
-                    side - HomeSection.bleed,
-                    DaloySpace.s2,
-                    side - HomeSection.bleed,
-                    DaloySpace.s10 + DaloyChrome.fabSize + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  sliver: SliverList.list(
-                    children: [
-                      Entrance(
-                        index: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: HomeSection.bleed),
-                          child: _Header(page: page),
-                        ),
-                      ),
-                      for (final (i, section) in sections.indexed) ...[
-                        const SizedBox(height: DaloySpace.s6),
-                        Entrance(key: ValueKey(section.label), index: i + 1, child: section),
-                      ],
-                      const SizedBox(height: DaloySpace.s6),
-                      if (wide)
+              return PullToRefreshScrollView(
+                onRefresh: page.isOnline ? _pullRefresh : null,
+                slivers: [
+                  SliverPadding(
+                    // Wider by the bleed, so Home's lists reach into the gutter;
+                    // everything else pads itself back in.
+                    padding: EdgeInsets.fromLTRB(
+                      side - HomeSection.bleed,
+                      DaloySpace.s2,
+                      side - HomeSection.bleed,
+                      DaloySpace.s10 + DaloyChrome.fabSize + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    sliver: SliverList.list(
+                      children: [
                         Entrance(
-                          index: sections.length + 1,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 11, child: songsBand),
-                              // The bands' bleeds already part them by 2 × bleed.
-                              const SizedBox(width: DaloySpace.s8 - HomeSection.bleed * 2),
-                              Expanded(flex: 9, child: lineUpsBand),
-                            ],
+                          index: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: HomeSection.bleed),
+                            child: _Header(page: page),
                           ),
-                        )
-                      else ...[
-                        Entrance(index: sections.length + 1, child: songsBand),
+                        ),
+                        for (final (i, section) in sections.indexed) ...[
+                          const SizedBox(height: DaloySpace.s6),
+                          Entrance(key: ValueKey(section.label), index: i + 1, child: section),
+                        ],
                         const SizedBox(height: DaloySpace.s6),
-                        Entrance(index: sections.length + 2, child: lineUpsBand),
+                        if (wide)
+                          Entrance(
+                            index: sections.length + 1,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 11, child: songsBand),
+                                // The bands' bleeds already part them by 2 × bleed.
+                                const SizedBox(width: DaloySpace.s8 - HomeSection.bleed * 2),
+                                Expanded(flex: 9, child: lineUpsBand),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          Entrance(index: sections.length + 1, child: songsBand),
+                          const SizedBox(height: DaloySpace.s6),
+                          Entrance(index: sections.length + 2, child: lineUpsBand),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
+
+  /// What's up next lends Home its colour, as its cover does on its page.
+  Widget _wash(LineUp? featured, Widget child) =>
+      featured == null ? child : PageWash(palette: lineUpPalette(featured), child: child);
 }
 
 /// The large title: today's date as an overline, the greeting in the

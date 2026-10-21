@@ -25,6 +25,11 @@ void main() {
     expect(EditorLine.parse('a [ b').drawnText, 'a [ b');
   });
 
+  test('a time signature on a bar line is a meter piece; in lyrics it is text', () {
+    expect(EditorLine.parse('| 2/4 [Em] |').pieces.map((p) => p.kind), contains(PieceKind.meter));
+    expect(EditorLine.parse('Sing 2/4').pieces.map((p) => p.kind), isNot(contains(PieceKind.meter)));
+  });
+
   group('caret mapping', () {
     final line = EditorLine.parse('A[Cmaj7]bc'); // drawn: "ACmaj7bc"
 

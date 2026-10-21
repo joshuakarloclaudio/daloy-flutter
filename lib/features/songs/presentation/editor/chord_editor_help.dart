@@ -36,6 +36,11 @@ Future<void> showChordEditorHelp(BuildContext context, {required String? musical
         description: 'Add x2, x3, x4… after a section or a bar line to say how many times it repeats.',
       ),
       const HelpRow(
+        title: 'Beats and odd bars',
+        code: '| [G] . [A] . | [F#m] . [Bm] . . . |\n| 2/4 [Em] [F#m] | [G] . [A] . |',
+        description: 'Each . is one more beat of the chord before it, and a bar is as long as its beats add up to. Start a bar with a time signature like 2/4 to change its length — its chords split it evenly. The TIME keys in the Sections tab insert one.',
+      ),
+      const HelpRow(
         title: 'Separators',
         code: '[C] - [Em] - [Am] | [F]',
         description: 'Use -, |, /, _ or spaces between chords.',

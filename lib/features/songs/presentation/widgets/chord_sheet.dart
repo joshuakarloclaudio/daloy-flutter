@@ -42,6 +42,11 @@ class ChartBarHighlight {
   int get hashCode => Object.hash(line, bar, atom, pending, pulse);
 }
 
+/// A bar tapped: its line in [ChordSheet.content], the bar in the line (a
+/// chord, on a bare chord line), and the chord in the bar — null for the bar
+/// as a whole.
+typedef BarTap = void Function(int line, int bar, int? atom);
+
 /// A chord chart: chords in colour above the lyric line, section headers,
 /// and barline rows that wrap at bar boundaries. The Flutter twin of the
 /// web's `ChordSheet`; the text → lines step lives in `chart_parser.dart`.
@@ -59,6 +64,7 @@ class ChordSheet extends StatefulWidget {
     this.highlightColor,
     this.onLineTap,
     this.onNoteTap,
+    this.onBarTap,
     this.focusLine,
     this.focusKey,
     this.focusLit = false,
@@ -97,6 +103,9 @@ class ChordSheet extends StatefulWidget {
   /// Makes each note tappable.
   final ValueChanged<LineUpSongNote>? onNoteTap;
 
+  /// Makes each bar and chord tappable (Practice: start there).
+  final BarTap? onBarTap;
+
   /// A line to point out (a search hit), in full-chart numbering: it carries
   /// [focusKey], to be scrolled to, and a wash while [focusLit].
   final int? focusLine;
@@ -132,7 +141,8 @@ class _ChordSheetState extends State<ChordSheet> {
     final lit = widget.highlight;
     ChartBarHighlight? litOn(int line) => lit != null && lit.line == line ? lit : null;
     Widget line(int i) {
-      var drawn = _line(_lines[i], style, litOn(i));
+      final onBar = widget.onBarTap;
+      var drawn = _line(_lines[i], style, litOn(i), onBar == null ? null : (bar, atom) => onBar(i, bar, atom));
       if (widget.focusLine == widget.lineOffset + i) {
         drawn = FocusedLine(key: widget.focusKey, lit: widget.focusLit, child: drawn);
       }
@@ -163,11 +173,17 @@ class _ChordSheetState extends State<ChordSheet> {
     );
   }
 
-  Widget _line(ChartLine line, ChartFormat s, ChartBarHighlight? lit) => switch (line) {
+  Widget _line(ChartLine line, ChartFormat s, ChartBarHighlight? lit, _BarTapIn? onTap) => switch (line) {
     BlankLine() => SizedBox(height: s.base.fontSize),
     SectionLine(:final label, :final repeat) => _SectionHeader(label: label, repeat: repeat, style: s),
-    BarChartLine(:final bars, :final repeat) => _BarRow(bars: bars, repeat: repeat, style: s, lit: lit),
-    ChordsLine(:final chords, :final repeat) => _ChordRow(chords: chords, repeat: repeat, style: s, lit: lit),
+    BarChartLine(:final bars, :final repeat) => _BarRow(bars: bars, repeat: repeat, style: s, lit: lit, onTap: onTap),
+    ChordsLine(:final chords, :final repeat) => _ChordRow(
+      chords: chords,
+      repeat: repeat,
+      style: s,
+      lit: lit,
+      onTap: onTap,
+    ),
     TextLine(:final segments) when isChordLyricLine(segments) => _ChordLyricLine(
       words: chordLyricWords(segments),
       style: s,
@@ -288,13 +304,17 @@ class _ChordLyricLine extends StatelessWidget {
   }
 }
 
+/// A bar tapped within a line: the bar, and the chord in it.
+typedef _BarTapIn = void Function(int bar, int? atom);
+
 class _ChordRow extends StatelessWidget {
-  const _ChordRow({required this.chords, required this.repeat, required this.style, this.lit});
+  const _ChordRow({required this.chords, required this.repeat, required this.style, this.lit, this.onTap});
 
   final List<String> chords;
   final int repeat;
   final ChartFormat style;
   final ChartBarHighlight? lit;
+  final _BarTapIn? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -304,12 +324,15 @@ class _ChordRow extends StatelessWidget {
       spacing: DaloySpace.s4,
       children: [
         for (final (i, chord) in chords.indexed)
-          _Lit(
-            highlight: lit?.bar == i ? lit : null,
-            color: style.highlightColor,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Text.rich(style.chordSpan(chord)),
+          _TappableBar(
+            onTap: onTap == null ? null : () => onTap!(i, null),
+            child: _Lit(
+              highlight: lit?.bar == i ? lit : null,
+              color: style.highlightColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text.rich(style.chordSpan(chord)),
+              ),
             ),
           ),
         if (repeat > 1) RepeatBadge(count: repeat, color: style.chord.color!, size: style.em),
@@ -319,12 +342,13 @@ class _ChordRow extends StatelessWidget {
 }
 
 class _BarRow extends StatelessWidget {
-  const _BarRow({required this.bars, required this.repeat, required this.style, this.lit});
+  const _BarRow({required this.bars, required this.repeat, required this.style, this.lit, this.onTap});
 
   final List<BarCell> bars;
   final int repeat;
   final ChartFormat style;
   final ChartBarHighlight? lit;
+  final _BarTapIn? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +358,13 @@ class _BarRow extends StatelessWidget {
       runSpacing: DaloySpace.s1,
       children: [
         for (var i = 0; i < bars.length; i++)
-          _BarUnit(bar: bars[i], isLast: i == bars.length - 1, style: style, lit: lit?.bar == i ? lit : null),
+          _BarUnit(
+            bar: bars[i],
+            isLast: i == bars.length - 1,
+            style: style,
+            lit: lit?.bar == i ? lit : null,
+            onTap: onTap == null ? null : (atom) => onTap!(i, atom),
+          ),
         if (repeat > 1)
           Padding(
             padding: const EdgeInsets.only(left: DaloySpace.s2),
@@ -349,7 +379,7 @@ class _BarRow extends StatelessWidget {
 /// so a narrow screen breaks between bars and each wrapped row still opens
 /// with a barline instead of splitting a bar in half.
 class _BarUnit extends StatelessWidget {
-  const _BarUnit({required this.bar, required this.isLast, required this.style, this.lit});
+  const _BarUnit({required this.bar, required this.isLast, required this.style, this.lit, this.onTap});
 
   final BarCell bar;
   final bool isLast;
@@ -358,52 +388,95 @@ class _BarUnit extends StatelessWidget {
   /// This bar is playing.
   final ChartBarHighlight? lit;
 
+  /// Called with the chord tapped, or null for the bar.
+  final ValueChanged<int?>? onTap;
+
+  /// The chord sounding at [atom]: a beat placeholder (`.`, `-`) belongs to
+  /// the chord before it.
+  int? _chordAt(int atom) {
+    for (var i = atom; i >= 0; i--) {
+      if (bar.atoms[i].any((s) => s.kind == SegmentKind.chord)) return i;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final em = style.em;
     final color = style.chord.color!;
     final blank = bar.atoms.isEmpty && !bar.simile;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        BarDivider(color: color, height: em * 1.15),
-        ConstrainedBox(
-          constraints: BoxConstraints(minWidth: blank ? em * 2 : 0),
-          child: _Lit(
-            // One atom lit when the bar wrote its rhythm; else the whole bar.
-            highlight: lit != null && (lit!.atom == null || lit!.pending) ? lit : null,
-            color: style.highlightColor,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (bar.simile)
-                    Padding(
-                      padding: EdgeInsets.only(right: bar.atoms.isEmpty ? 0 : DaloySpace.s2),
-                      child: Text(
-                        '⁄⁄',
-                        style: style.chord.copyWith(fontSize: em * 0.9, color: color.withValues(alpha: 0.5)),
+    final onTap = this.onTap;
+    return _TappableBar(
+      onTap: onTap == null ? null : () => onTap(null),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          BarDivider(color: color, height: em * 1.15),
+          ConstrainedBox(
+            constraints: BoxConstraints(minWidth: blank ? em * 2 : 0),
+            child: _Lit(
+              // One atom lit when the bar wrote its rhythm; else the whole bar.
+              highlight: lit != null && lit!.atom == null ? lit : null,
+              color: style.highlightColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (bar.meter case final meter?)
+                      Padding(
+                        padding: EdgeInsets.only(right: bar.atoms.isEmpty && !bar.simile ? 0 : DaloySpace.s2),
+                        child: MeterBadge(signature: meter.value, color: color, size: em),
                       ),
-                    ),
-                  for (var i = 0; i < bar.atoms.length; i++) ...[
-                    if (i > 0) const SizedBox(width: DaloySpace.s2),
-                    _Lit(
-                      highlight: lit != null && !lit!.pending && lit!.atom == i ? lit : null,
-                      color: style.highlightColor,
-                      tight: true,
-                      child: _Atom(atom: bar.atoms[i], style: style),
-                    ),
+                    if (bar.simile)
+                      Padding(
+                        padding: EdgeInsets.only(right: bar.atoms.isEmpty ? 0 : DaloySpace.s2),
+                        child: Text(
+                          '⁄⁄',
+                          style: style.chord.copyWith(fontSize: em * 0.9, color: color.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                    for (var i = 0; i < bar.atoms.length; i++) ...[
+                      if (i > 0) const SizedBox(width: DaloySpace.s2),
+                      _TappableBar(
+                        onTap: onTap == null ? null : () => onTap(_chordAt(i)),
+                        child: _Lit(
+                          highlight: lit != null && lit!.atom == i ? lit : null,
+                          color: style.highlightColor,
+                          tight: true,
+                          child: _Atom(atom: bar.atoms[i], style: style),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        if (isLast) BarDivider(color: color, height: em * 1.15),
-      ],
+          if (isLast) BarDivider(color: color, height: em * 1.15),
+        ],
+      ),
+    );
+  }
+}
+
+/// A bar or chord you can tap, when [onTap] is set; else just [child]. The
+/// innermost one under the finger wins, so a chord beats its bar.
+class _TappableBar extends StatelessWidget {
+  const _TappableBar({required this.onTap, required this.child});
+
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final onTap = this.onTap;
+    if (onTap == null) return child;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: child),
     );
   }
 }
@@ -611,6 +684,42 @@ class RepeatBadge extends StatelessWidget {
       ).weight(FontWeight.w600),
     ),
   );
+}
+
+/// A bar's own time signature (`| 2/4 Em F#m |`), stacked as it is engraved
+/// so it never reads as a chord — in numbers, `2/4` is also a slash chord.
+class MeterBadge extends StatelessWidget {
+  const MeterBadge({super.key, required this.signature, required this.color, required this.size});
+
+  /// As written: `2/4`.
+  final String signature;
+  final Color color;
+
+  /// The surrounding font size.
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final [top, bottom] = signature.split('/');
+    final style = TextStyle(
+      fontSize: size * 0.5,
+      height: 1,
+      color: color.withValues(alpha: 0.75),
+      fontFeatures: const [FontFeature.tabularFigures()],
+    ).weight(FontWeight.w700);
+    return Semantics(
+      label: '$top $bottom time',
+      child: ExcludeSemantics(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(top, style: style),
+            Text(bottom, style: style),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// A beat written as a bare `.` — a rest or held beat with no chord of its own.

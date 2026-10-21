@@ -43,6 +43,12 @@ class Songs extends Table {
   /// means it's out of date.
   IntColumn get version => integer().withDefault(const Constant(1))();
 
+  /// The server's last shared change: when, and who ([updatedById] and
+  /// [updatedByName] both null when it doesn't know).
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  IntColumn get updatedById => integer().nullable()();
+  TextColumn get updatedByName => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -150,6 +156,9 @@ class DisplayPrefs extends Table {
   /// Practice: the playing bar pulses on the beat.
   BoolColumn get practiceFlash => boolean().withDefault(const Constant(true))();
 
+  /// Practice: bars counted in before Play starts (0: straight in).
+  IntColumn get practiceCountIn => integer().withDefault(const Constant(1))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -175,6 +184,12 @@ class LineUps extends Table {
   /// Whether [LineUpSongs] holds this line-up's songs. The list endpoint
   /// carries only a count, so songs arrive with the detail (or a local edit).
   BoolColumn get songsLoaded => boolean().withDefault(const Constant(false))();
+
+  /// The server's last shared change: when, and who ([updatedById] and
+  /// [updatedByName] both null when it doesn't know).
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  IntColumn get updatedById => integer().nullable()();
+  TextColumn get updatedByName => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -367,7 +382,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'daloy'));
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -429,6 +444,15 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 12) await m.createTable(analyticsQueue);
       if (from < 13) await m.addColumn(songs, songs.lastUsedAt);
+      if (from < 14 && from >= 3) await m.addColumn(displayPrefs, displayPrefs.practiceCountIn);
+      if (from < 15) {
+        await m.addColumn(songs, songs.updatedAt);
+        await m.addColumn(songs, songs.updatedById);
+        await m.addColumn(songs, songs.updatedByName);
+        await m.addColumn(lineUps, lineUps.updatedAt);
+        await m.addColumn(lineUps, lineUps.updatedById);
+        await m.addColumn(lineUps, lineUps.updatedByName);
+      }
     },
   );
 

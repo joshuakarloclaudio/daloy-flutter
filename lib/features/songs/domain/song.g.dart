@@ -28,6 +28,12 @@ _Song _$SongFromJson(Map<String, dynamic> json) => _Song(
       ? null
       : DateTime.parse(json['last_used_at'] as String),
   version: (json['version'] as num?)?.toInt() ?? 1,
+  updatedAt: json['updated_at'] == null
+      ? null
+      : DateTime.parse(json['updated_at'] as String),
+  updatedBy: json['updated_by'] == null
+      ? null
+      : UserBrief.fromJson(json['updated_by'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$SongToJson(_Song instance) => <String, dynamic>{
@@ -48,7 +54,15 @@ Map<String, dynamic> _$SongToJson(_Song instance) => <String, dynamic>{
   'created_at': instance.createdAt?.toIso8601String(),
   'last_used_at': instance.lastUsedAt?.toIso8601String(),
   'version': instance.version,
+  'updated_at': instance.updatedAt?.toIso8601String(),
+  'updated_by': instance.updatedBy?.toJson(),
 };
+
+_UserBrief _$UserBriefFromJson(Map<String, dynamic> json) =>
+    _UserBrief(id: (json['id'] as num).toInt(), name: json['name'] as String);
+
+Map<String, dynamic> _$UserBriefToJson(_UserBrief instance) =>
+    <String, dynamic>{'id': instance.id, 'name': instance.name};
 
 _SongsPage _$SongsPageFromJson(Map<String, dynamic> json) => _SongsPage(
   data: (json['data'] as List<dynamic>)

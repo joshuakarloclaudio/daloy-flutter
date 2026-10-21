@@ -10,7 +10,6 @@ import 'package:daloy_flutter/shared/widgets/daloy_top_bar.dart';
 import 'package:daloy_flutter/shell/desktop_shell.dart';
 import 'package:daloy_flutter/shell/shell_layout.dart';
 import 'package:daloy_flutter/shell/sidebar_state.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +29,6 @@ class _Session extends SessionController {
 const _window = Size(1280, 820);
 
 Future<(SharedPreferences, List<int>)> _pump(WidgetTester tester, {Map<String, Object>? stored}) async {
-  debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
   tester.view
     ..physicalSize = _window
     ..devicePixelRatio = 1;
@@ -73,10 +71,10 @@ Future<(SharedPreferences, List<int>)> _pump(WidgetTester tester, {Map<String, O
 double _screenLeft(WidgetTester tester) => tester.getTopLeft(find.byKey(const Key('screen'))).dx;
 
 void main() {
-  tearDown(() => debugDefaultTargetPlatformOverride = null);
+  // Sets the Mac for each test and puts it back before Flutter checks.
+  final mac = TargetPlatformVariant.only(TargetPlatform.macOS);
 
   testWidgets('the Mac is always the desktop shell, however narrow', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
     tester.view
       ..physicalSize = const Size(700, 900)
       ..devicePixelRatio = 1;
@@ -92,7 +90,7 @@ void main() {
     );
     expect(layout, ShellLayout.desktop);
     expect(layout.wide, isTrue);
-  });
+  }, variant: mac);
 
   testWidgets('opens with the sidebar beside the screen; Search lives there, not in the bar', (tester) async {
     await _pump(tester);
@@ -103,14 +101,14 @@ void main() {
     // The bar keeps its title, and leaves out the magnifier.
     expect(find.text('Songs'), findsNWidgets(2));
     expect(find.byIcon(TablerIcons.search), findsOneWidget);
-  });
+  }, variant: mac);
 
   testWidgets('a destination selects its branch, and you are at the bottom', (tester) async {
     final (_, selected) = await _pump(tester);
     await tester.tap(find.text('Line-ups'));
     await tester.tap(find.text('Ana Reyes'));
     expect(selected, [2, 3]);
-  });
+  }, variant: mac);
 
   testWidgets('⌘\\ collapses to an icon rail, and it is remembered', (tester) async {
     final (prefs, _) = await _pump(tester);
@@ -127,7 +125,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Expand sidebar'));
     await tester.pumpAndSettle();
     expect(_screenLeft(tester), DesktopSidebar.defaultWidth);
-  });
+  }, variant: mac);
 
   testWidgets('dragging the edge resizes, within limits, and the width is kept', (tester) async {
     final (prefs, _) = await _pump(tester);
@@ -141,10 +139,10 @@ void main() {
     await tester.drag(edge, const Offset(400, 0));
     await tester.pumpAndSettle();
     expect(_screenLeft(tester), DesktopSidebar.maxWidth);
-  });
+  }, variant: mac);
 
   testWidgets('a collapsed sidebar opens collapsed next time', (tester) async {
     await _pump(tester, stored: {'daloy.desktop_sidebar_collapsed': true, 'daloy.desktop_sidebar_width': 300.0});
     expect(_screenLeft(tester), DesktopSidebar.railWidth);
-  });
+  }, variant: mac);
 }

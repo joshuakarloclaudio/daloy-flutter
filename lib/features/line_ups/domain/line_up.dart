@@ -19,6 +19,10 @@ abstract class LineUp with _$LineUp {
     String? worshipLeader,
     @Default(0) int songsCount,
     @Default(1) int version,
+
+    /// The last shared change — details, set, keys, notes or arrangement.
+    DateTime? updatedAt,
+    UserBrief? updatedBy,
   }) = _LineUp;
 
   factory LineUp.fromJson(Map<String, dynamic> json) => _$LineUpFromJson(json);
@@ -55,12 +59,22 @@ abstract class LineUpDetail with _$LineUpDetail {
     @Default(0) int songsCount,
     @Default(<LineUpSongEntry>[]) List<LineUpSongEntry> songs,
     @Default(1) int version,
+    DateTime? updatedAt,
+    UserBrief? updatedBy,
   }) = _LineUpDetail;
 
   factory LineUpDetail.fromJson(Map<String, dynamic> json) => _$LineUpDetailFromJson(json);
 
-  LineUp get summary =>
-      LineUp(id: id, title: title, date: date, worshipLeader: worshipLeader, songsCount: songsCount, version: version);
+  LineUp get summary => LineUp(
+    id: id,
+    title: title,
+    date: date,
+    worshipLeader: worshipLeader,
+    songsCount: songsCount,
+    version: version,
+    updatedAt: updatedAt,
+    updatedBy: updatedBy,
+  );
 }
 
 /// `LineUpSongEntryData` — one song in a line-up, with its line-up key.

@@ -56,7 +56,7 @@ final class MusicPlayerProvider
   }
 }
 
-String _$musicPlayerHash() => r'b54c9a253de1a86a6ab25423519ed65ec1830f12';
+String _$musicPlayerHash() => r'162032aa17d62312ab8876708965fd79a9b26c43';
 
 /// The music player: plays a line-up's (or a song's) YouTube links in order
 /// — the twin of `use-music-player.ts`, but one for the whole app, so it

@@ -8,10 +8,13 @@ import '../../domain/line_up.dart';
 
 /// A line-up's colours: Today Emerald on the day, quiet grey once it's past,
 /// otherwise a teal-family palette that stays the same between visits.
-FlowPalette lineUpPalette(LineUp lineUp, [DateTime? now]) {
-  if (lineUpDayChip(lineUp.date, now) == DayChip.today) return FlowPalette.today;
-  if (lineUp.date.compareTo(isoDate(now ?? DateTime.now())) < 0) return FlowPalette.past;
-  return FlowPalette.seeded(lineUp.id);
+FlowPalette lineUpPalette(LineUp lineUp, [DateTime? now]) => lineUpPaletteFor(lineUp.id, lineUp.date, now);
+
+/// [lineUpPalette] from a line-up's id and `YYYY-MM-DD` date alone.
+FlowPalette lineUpPaletteFor(int id, String date, [DateTime? now]) {
+  if (lineUpDayChip(date, now) == DayChip.today) return FlowPalette.today;
+  if (date.compareTo(isoDate(now ?? DateTime.now())) < 0) return FlowPalette.past;
+  return FlowPalette.seeded(id);
 }
 
 /// A line-up's generated cover: the day in large serif type on its palette,

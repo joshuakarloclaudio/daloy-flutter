@@ -53,8 +53,9 @@ class ProfileScreen extends ConsumerWidget {
     final update = ref.watch(appUpdateProvider);
     final canPinWidget = ref.watch(canPinHomeWidgetProvider).value ?? false;
 
-    return Scaffold(
-      appBar: const DaloyTopBar(title: 'You', largeTitle: true, actions: [TopBarSearchButton()]),
+    final scaffold = Scaffold(
+      backgroundColor: user == null ? null : Colors.transparent,
+      appBar: DaloyTopBar(title: 'You', largeTitle: true, washed: user != null, actions: const [TopBarSearchButton()]),
       body: ListView(
         padding: EdgeInsets.fromLTRB(0, 0, 0, DaloySpace.s10 + MediaQuery.paddingOf(context).bottom),
         children: [
@@ -273,6 +274,8 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+    // The avatar's colour behind the top of the page.
+    return user == null ? scaffold : PageWash(palette: FlowPalette.seeded(user.id), child: scaffold);
   }
 }
 

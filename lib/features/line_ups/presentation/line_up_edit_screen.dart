@@ -23,6 +23,7 @@ import '../domain/line_up.dart';
 import '../domain/line_up_draft.dart';
 import 'widgets/add_songs_sheet.dart';
 import 'widgets/line_up_cover.dart';
+import '../../../shared/widgets/flow_artwork.dart';
 import 'widgets/line_up_edit_song_row.dart';
 import 'widgets/performance_key_sheet.dart';
 
@@ -118,35 +119,46 @@ class _LineUpEditScreenState extends ConsumerState<LineUpEditScreen> {
         if (didPop) return;
         if (await confirmDiscardChanges(context) && context.mounted) Navigator.of(context).pop();
       },
-      child: Scaffold(
-        appBar: DaloyTopBar(
-          title: 'Edit line-up',
-          actions: [
-            if (draft != null)
-              draft.saving
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: DaloySpace.s4),
-                      child: DaloySpinner(size: 18),
-                    )
-                  : GlassTextButton(label: 'Save', prominent: true, onPressed: draft.canSave ? _save : null),
-          ],
-        ),
-        body: switch (state) {
-          AsyncData(:final value) => _EditBody(
-            draft: value,
-            title: _title,
-            leader: _leader,
-            controller: _controller,
-            onAddSongs: () => _addSongs(value),
-            onPickKey: _pickKey,
-            onRemove: _remove,
+      child: _wash(
+        draft,
+        Scaffold(
+          backgroundColor: draft == null ? null : Colors.transparent,
+          appBar: DaloyTopBar(
+            title: 'Edit line-up',
+            washed: draft != null,
+            actions: [
+              if (draft != null)
+                draft.saving
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: DaloySpace.s4),
+                        child: DaloySpinner(size: 18),
+                      )
+                    : GlassTextButton(label: 'Save', prominent: true, onPressed: draft.canSave ? _save : null),
+            ],
           ),
-          AsyncError(:final error) => _Missing(notFound: error is LineUpNotFound),
-          _ => const ListSkeleton(),
-        },
+          body: switch (state) {
+            AsyncData(:final value) => _EditBody(
+              draft: value,
+              title: _title,
+              leader: _leader,
+              controller: _controller,
+              onAddSongs: () => _addSongs(value),
+              onPickKey: _pickKey,
+              onRemove: _remove,
+            ),
+            AsyncError(:final error) => _Missing(notFound: error is LineUpNotFound),
+            _ => const ListSkeleton(),
+          },
+        ),
       ),
     );
   }
+
+  /// The line-up's colour behind the top, as on its detail page — by the
+  /// saved date, so it doesn't shift while the date is being edited.
+  Widget _wash(LineUpEditState? draft, Widget child) => draft == null
+      ? child
+      : PageWash(palette: lineUpPaletteFor(widget.lineUpId, draft.saved.details.date), child: child);
 }
 
 class _EditBody extends StatelessWidget {

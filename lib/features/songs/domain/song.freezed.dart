@@ -18,7 +18,8 @@ mixin _$Song {
 
  int get id; String get title; String? get artist; String? get key; int? get transposition; int? get bpm; String? get timeSignature; String? get content; String? get lyrics; String? get youtubeUrl; String? get spotifyUrl; String? get appleMusicUrl; String? get otherUrl; bool get isPublic; DateTime? get createdAt;/// When it was last added to a line-up. Only the library list carries it.
  DateTime? get lastUsedAt;/// Bumped by the server on every change.
- int get version;
+ int get version;/// The last shared change: when, and who (null for older changes).
+ DateTime? get updatedAt; UserBrief? get updatedBy;
 /// Create a copy of Song
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -32,20 +33,20 @@ $SongCopyWith<Song> get copyWith => _$SongCopyWithImpl<Song>(this as Song, _$ide
 @override
 bool operator ==(Object other) {
   final _this = this as Song;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Song&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.transposition, _this.transposition) || other.transposition == _this.transposition)&&(identical(other.bpm, _this.bpm) || other.bpm == _this.bpm)&&(identical(other.timeSignature, _this.timeSignature) || other.timeSignature == _this.timeSignature)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.lyrics, _this.lyrics) || other.lyrics == _this.lyrics)&&(identical(other.youtubeUrl, _this.youtubeUrl) || other.youtubeUrl == _this.youtubeUrl)&&(identical(other.spotifyUrl, _this.spotifyUrl) || other.spotifyUrl == _this.spotifyUrl)&&(identical(other.appleMusicUrl, _this.appleMusicUrl) || other.appleMusicUrl == _this.appleMusicUrl)&&(identical(other.otherUrl, _this.otherUrl) || other.otherUrl == _this.otherUrl)&&(identical(other.isPublic, _this.isPublic) || other.isPublic == _this.isPublic)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.lastUsedAt, _this.lastUsedAt) || other.lastUsedAt == _this.lastUsedAt)&&(identical(other.version, _this.version) || other.version == _this.version));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Song&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.transposition, _this.transposition) || other.transposition == _this.transposition)&&(identical(other.bpm, _this.bpm) || other.bpm == _this.bpm)&&(identical(other.timeSignature, _this.timeSignature) || other.timeSignature == _this.timeSignature)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.lyrics, _this.lyrics) || other.lyrics == _this.lyrics)&&(identical(other.youtubeUrl, _this.youtubeUrl) || other.youtubeUrl == _this.youtubeUrl)&&(identical(other.spotifyUrl, _this.spotifyUrl) || other.spotifyUrl == _this.spotifyUrl)&&(identical(other.appleMusicUrl, _this.appleMusicUrl) || other.appleMusicUrl == _this.appleMusicUrl)&&(identical(other.otherUrl, _this.otherUrl) || other.otherUrl == _this.otherUrl)&&(identical(other.isPublic, _this.isPublic) || other.isPublic == _this.isPublic)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.lastUsedAt, _this.lastUsedAt) || other.lastUsedAt == _this.lastUsedAt)&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.updatedBy, _this.updatedBy) || other.updatedBy == _this.updatedBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Song;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.artist,_this.key,_this.transposition,_this.bpm,_this.timeSignature,_this.content,_this.lyrics,_this.youtubeUrl,_this.spotifyUrl,_this.appleMusicUrl,_this.otherUrl,_this.isPublic,_this.createdAt,_this.lastUsedAt,_this.version);
+  return Object.hashAll([runtimeType,_this.id,_this.title,_this.artist,_this.key,_this.transposition,_this.bpm,_this.timeSignature,_this.content,_this.lyrics,_this.youtubeUrl,_this.spotifyUrl,_this.appleMusicUrl,_this.otherUrl,_this.isPublic,_this.createdAt,_this.lastUsedAt,_this.version,_this.updatedAt,_this.updatedBy]);
 }
 
 @override
 String toString() {
   final _this = this as Song;
-  return 'Song(id: ${_this.id}, title: ${_this.title}, artist: ${_this.artist}, key: ${_this.key}, transposition: ${_this.transposition}, bpm: ${_this.bpm}, timeSignature: ${_this.timeSignature}, content: ${_this.content}, lyrics: ${_this.lyrics}, youtubeUrl: ${_this.youtubeUrl}, spotifyUrl: ${_this.spotifyUrl}, appleMusicUrl: ${_this.appleMusicUrl}, otherUrl: ${_this.otherUrl}, isPublic: ${_this.isPublic}, createdAt: ${_this.createdAt}, lastUsedAt: ${_this.lastUsedAt}, version: ${_this.version})';
+  return 'Song(id: ${_this.id}, title: ${_this.title}, artist: ${_this.artist}, key: ${_this.key}, transposition: ${_this.transposition}, bpm: ${_this.bpm}, timeSignature: ${_this.timeSignature}, content: ${_this.content}, lyrics: ${_this.lyrics}, youtubeUrl: ${_this.youtubeUrl}, spotifyUrl: ${_this.spotifyUrl}, appleMusicUrl: ${_this.appleMusicUrl}, otherUrl: ${_this.otherUrl}, isPublic: ${_this.isPublic}, createdAt: ${_this.createdAt}, lastUsedAt: ${_this.lastUsedAt}, version: ${_this.version}, updatedAt: ${_this.updatedAt}, updatedBy: ${_this.updatedBy})';
 }
 
 
@@ -56,11 +57,11 @@ abstract mixin class $SongCopyWith<$Res>  {
   factory $SongCopyWith(Song value, $Res Function(Song) _then) = _$SongCopyWithImpl;
 @useResult
 $Res call({
- int id, String title, String? artist, String? key, int? transposition, int? bpm, String? timeSignature, String? content, String? lyrics, String? youtubeUrl, String? spotifyUrl, String? appleMusicUrl, String? otherUrl, bool isPublic, DateTime? createdAt, DateTime? lastUsedAt, int version
+ int id, String title, String? artist, String? key, int? transposition, int? bpm, String? timeSignature, String? content, String? lyrics, String? youtubeUrl, String? spotifyUrl, String? appleMusicUrl, String? otherUrl, bool isPublic, DateTime? createdAt, DateTime? lastUsedAt, int version, DateTime? updatedAt, UserBrief? updatedBy
 });
 
 
-
+$UserBriefCopyWith<$Res>? get updatedBy;
 
 }
 /// @nodoc
@@ -73,7 +74,7 @@ class _$SongCopyWithImpl<$Res>
 
 /// Create a copy of Song
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? artist = freezed,Object? key = freezed,Object? transposition = freezed,Object? bpm = freezed,Object? timeSignature = freezed,Object? content = freezed,Object? lyrics = freezed,Object? youtubeUrl = freezed,Object? spotifyUrl = freezed,Object? appleMusicUrl = freezed,Object? otherUrl = freezed,Object? isPublic = null,Object? createdAt = freezed,Object? lastUsedAt = freezed,Object? version = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? artist = freezed,Object? key = freezed,Object? transposition = freezed,Object? bpm = freezed,Object? timeSignature = freezed,Object? content = freezed,Object? lyrics = freezed,Object? youtubeUrl = freezed,Object? spotifyUrl = freezed,Object? appleMusicUrl = freezed,Object? otherUrl = freezed,Object? isPublic = null,Object? createdAt = freezed,Object? lastUsedAt = freezed,Object? version = null,Object? updatedAt = freezed,Object? updatedBy = freezed,}) {
   return _then(Song(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -92,10 +93,24 @@ as String?,isPublic: null == isPublic ? _self.isPublic : isPublic // ignore: cas
 as bool,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,lastUsedAt: freezed == lastUsedAt ? _self.lastUsedAt : lastUsedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,version: null == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
-as int,
+as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedBy: freezed == updatedBy ? _self.updatedBy : updatedBy // ignore: cast_nullable_to_non_nullable
+as UserBrief?,
   ));
 }
+/// Create a copy of Song
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<$Res>? get updatedBy {
+    if (_self.updatedBy == null) {
+    return null;
+  }
 
+  return $UserBriefCopyWith<$Res>(_self.updatedBy!, (value) {
+    return _then(_self.copyWith(updatedBy: value));
+  });
+}
 }
 
 
@@ -177,10 +192,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String title,  String? artist,  String? key,  int? transposition,  int? bpm,  String? timeSignature,  String? content,  String? lyrics,  String? youtubeUrl,  String? spotifyUrl,  String? appleMusicUrl,  String? otherUrl,  bool isPublic,  DateTime? createdAt,  DateTime? lastUsedAt,  int version)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String title,  String? artist,  String? key,  int? transposition,  int? bpm,  String? timeSignature,  String? content,  String? lyrics,  String? youtubeUrl,  String? spotifyUrl,  String? appleMusicUrl,  String? otherUrl,  bool isPublic,  DateTime? createdAt,  DateTime? lastUsedAt,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Song() when $default != null:
-return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,_that.bpm,_that.timeSignature,_that.content,_that.lyrics,_that.youtubeUrl,_that.spotifyUrl,_that.appleMusicUrl,_that.otherUrl,_that.isPublic,_that.createdAt,_that.lastUsedAt,_that.version);case _:
+return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,_that.bpm,_that.timeSignature,_that.content,_that.lyrics,_that.youtubeUrl,_that.spotifyUrl,_that.appleMusicUrl,_that.otherUrl,_that.isPublic,_that.createdAt,_that.lastUsedAt,_that.version,_that.updatedAt,_that.updatedBy);case _:
   return orElse();
 
 }
@@ -198,10 +213,10 @@ return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String title,  String? artist,  String? key,  int? transposition,  int? bpm,  String? timeSignature,  String? content,  String? lyrics,  String? youtubeUrl,  String? spotifyUrl,  String? appleMusicUrl,  String? otherUrl,  bool isPublic,  DateTime? createdAt,  DateTime? lastUsedAt,  int version)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String title,  String? artist,  String? key,  int? transposition,  int? bpm,  String? timeSignature,  String? content,  String? lyrics,  String? youtubeUrl,  String? spotifyUrl,  String? appleMusicUrl,  String? otherUrl,  bool isPublic,  DateTime? createdAt,  DateTime? lastUsedAt,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)  $default,) {final _that = this;
 switch (_that) {
 case _Song():
-return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,_that.bpm,_that.timeSignature,_that.content,_that.lyrics,_that.youtubeUrl,_that.spotifyUrl,_that.appleMusicUrl,_that.otherUrl,_that.isPublic,_that.createdAt,_that.lastUsedAt,_that.version);case _:
+return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,_that.bpm,_that.timeSignature,_that.content,_that.lyrics,_that.youtubeUrl,_that.spotifyUrl,_that.appleMusicUrl,_that.otherUrl,_that.isPublic,_that.createdAt,_that.lastUsedAt,_that.version,_that.updatedAt,_that.updatedBy);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -218,10 +233,10 @@ return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String title,  String? artist,  String? key,  int? transposition,  int? bpm,  String? timeSignature,  String? content,  String? lyrics,  String? youtubeUrl,  String? spotifyUrl,  String? appleMusicUrl,  String? otherUrl,  bool isPublic,  DateTime? createdAt,  DateTime? lastUsedAt,  int version)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String title,  String? artist,  String? key,  int? transposition,  int? bpm,  String? timeSignature,  String? content,  String? lyrics,  String? youtubeUrl,  String? spotifyUrl,  String? appleMusicUrl,  String? otherUrl,  bool isPublic,  DateTime? createdAt,  DateTime? lastUsedAt,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)?  $default,) {final _that = this;
 switch (_that) {
 case _Song() when $default != null:
-return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,_that.bpm,_that.timeSignature,_that.content,_that.lyrics,_that.youtubeUrl,_that.spotifyUrl,_that.appleMusicUrl,_that.otherUrl,_that.isPublic,_that.createdAt,_that.lastUsedAt,_that.version);case _:
+return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,_that.bpm,_that.timeSignature,_that.content,_that.lyrics,_that.youtubeUrl,_that.spotifyUrl,_that.appleMusicUrl,_that.otherUrl,_that.isPublic,_that.createdAt,_that.lastUsedAt,_that.version,_that.updatedAt,_that.updatedBy);case _:
   return null;
 
 }
@@ -233,7 +248,7 @@ return $default(_that.id,_that.title,_that.artist,_that.key,_that.transposition,
 @JsonSerializable()
 
 class _Song extends Song {
-  const _Song({required this.id, required this.title, this.artist, this.key, this.transposition, this.bpm, this.timeSignature, this.content, this.lyrics, this.youtubeUrl, this.spotifyUrl, this.appleMusicUrl, this.otherUrl, this.isPublic = false, this.createdAt, this.lastUsedAt, this.version = 1}): super._();
+  const _Song({required this.id, required this.title, this.artist, this.key, this.transposition, this.bpm, this.timeSignature, this.content, this.lyrics, this.youtubeUrl, this.spotifyUrl, this.appleMusicUrl, this.otherUrl, this.isPublic = false, this.createdAt, this.lastUsedAt, this.version = 1, this.updatedAt, this.updatedBy}): super._();
   factory _Song.fromJson(Map<String, dynamic> json) => _$SongFromJson(json);
 
 @override final  int id;
@@ -255,6 +270,9 @@ class _Song extends Song {
 @override final  DateTime? lastUsedAt;
 /// Bumped by the server on every change.
 @override@JsonKey() final  int version;
+/// The last shared change: when, and who (null for older changes).
+@override final  DateTime? updatedAt;
+@override final  UserBrief? updatedBy;
 
 /// Create a copy of Song
 /// with the given fields replaced by the non-null parameter values.
@@ -269,18 +287,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Song&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.key, key) || other.key == key)&&(identical(other.transposition, transposition) || other.transposition == transposition)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.timeSignature, timeSignature) || other.timeSignature == timeSignature)&&(identical(other.content, content) || other.content == content)&&(identical(other.lyrics, lyrics) || other.lyrics == lyrics)&&(identical(other.youtubeUrl, youtubeUrl) || other.youtubeUrl == youtubeUrl)&&(identical(other.spotifyUrl, spotifyUrl) || other.spotifyUrl == spotifyUrl)&&(identical(other.appleMusicUrl, appleMusicUrl) || other.appleMusicUrl == appleMusicUrl)&&(identical(other.otherUrl, otherUrl) || other.otherUrl == otherUrl)&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastUsedAt, lastUsedAt) || other.lastUsedAt == lastUsedAt)&&(identical(other.version, version) || other.version == version));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Song&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.key, key) || other.key == key)&&(identical(other.transposition, transposition) || other.transposition == transposition)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.timeSignature, timeSignature) || other.timeSignature == timeSignature)&&(identical(other.content, content) || other.content == content)&&(identical(other.lyrics, lyrics) || other.lyrics == lyrics)&&(identical(other.youtubeUrl, youtubeUrl) || other.youtubeUrl == youtubeUrl)&&(identical(other.spotifyUrl, spotifyUrl) || other.spotifyUrl == spotifyUrl)&&(identical(other.appleMusicUrl, appleMusicUrl) || other.appleMusicUrl == appleMusicUrl)&&(identical(other.otherUrl, otherUrl) || other.otherUrl == otherUrl)&&(identical(other.isPublic, isPublic) || other.isPublic == isPublic)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastUsedAt, lastUsedAt) || other.lastUsedAt == lastUsedAt)&&(identical(other.version, version) || other.version == version)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.updatedBy, updatedBy) || other.updatedBy == updatedBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,artist,key,transposition,bpm,timeSignature,content,lyrics,youtubeUrl,spotifyUrl,appleMusicUrl,otherUrl,isPublic,createdAt,lastUsedAt,version);
+    return Object.hashAll([runtimeType,id,title,artist,key,transposition,bpm,timeSignature,content,lyrics,youtubeUrl,spotifyUrl,appleMusicUrl,otherUrl,isPublic,createdAt,lastUsedAt,version,updatedAt,updatedBy]);
 }
 
 @override
 String toString() {
-    return 'Song(id: $id, title: $title, artist: $artist, key: $key, transposition: $transposition, bpm: $bpm, timeSignature: $timeSignature, content: $content, lyrics: $lyrics, youtubeUrl: $youtubeUrl, spotifyUrl: $spotifyUrl, appleMusicUrl: $appleMusicUrl, otherUrl: $otherUrl, isPublic: $isPublic, createdAt: $createdAt, lastUsedAt: $lastUsedAt, version: $version)';
+    return 'Song(id: $id, title: $title, artist: $artist, key: $key, transposition: $transposition, bpm: $bpm, timeSignature: $timeSignature, content: $content, lyrics: $lyrics, youtubeUrl: $youtubeUrl, spotifyUrl: $spotifyUrl, appleMusicUrl: $appleMusicUrl, otherUrl: $otherUrl, isPublic: $isPublic, createdAt: $createdAt, lastUsedAt: $lastUsedAt, version: $version, updatedAt: $updatedAt, updatedBy: $updatedBy)';
 }
 
 
@@ -291,11 +309,11 @@ abstract mixin class _$SongCopyWith<$Res> implements $SongCopyWith<$Res> {
   factory _$SongCopyWith(_Song value, $Res Function(_Song) _then) = __$SongCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String title, String? artist, String? key, int? transposition, int? bpm, String? timeSignature, String? content, String? lyrics, String? youtubeUrl, String? spotifyUrl, String? appleMusicUrl, String? otherUrl, bool isPublic, DateTime? createdAt, DateTime? lastUsedAt, int version
+ int id, String title, String? artist, String? key, int? transposition, int? bpm, String? timeSignature, String? content, String? lyrics, String? youtubeUrl, String? spotifyUrl, String? appleMusicUrl, String? otherUrl, bool isPublic, DateTime? createdAt, DateTime? lastUsedAt, int version, DateTime? updatedAt, UserBrief? updatedBy
 });
 
 
-
+@override $UserBriefCopyWith<$Res>? get updatedBy;
 
 }
 /// @nodoc
@@ -308,7 +326,7 @@ class __$SongCopyWithImpl<$Res>
 
 /// Create a copy of Song
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? artist = freezed,Object? key = freezed,Object? transposition = freezed,Object? bpm = freezed,Object? timeSignature = freezed,Object? content = freezed,Object? lyrics = freezed,Object? youtubeUrl = freezed,Object? spotifyUrl = freezed,Object? appleMusicUrl = freezed,Object? otherUrl = freezed,Object? isPublic = null,Object? createdAt = freezed,Object? lastUsedAt = freezed,Object? version = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? artist = freezed,Object? key = freezed,Object? transposition = freezed,Object? bpm = freezed,Object? timeSignature = freezed,Object? content = freezed,Object? lyrics = freezed,Object? youtubeUrl = freezed,Object? spotifyUrl = freezed,Object? appleMusicUrl = freezed,Object? otherUrl = freezed,Object? isPublic = null,Object? createdAt = freezed,Object? lastUsedAt = freezed,Object? version = null,Object? updatedAt = freezed,Object? updatedBy = freezed,}) {
   return _then(_Song(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -327,7 +345,294 @@ as String?,isPublic: null == isPublic ? _self.isPublic : isPublic // ignore: cas
 as bool,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,lastUsedAt: freezed == lastUsedAt ? _self.lastUsedAt : lastUsedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,version: null == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
-as int,
+as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedBy: freezed == updatedBy ? _self.updatedBy : updatedBy // ignore: cast_nullable_to_non_nullable
+as UserBrief?,
+  ));
+}
+
+/// Create a copy of Song
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<$Res>? get updatedBy {
+    if (_self.updatedBy == null) {
+    return null;
+  }
+
+  return $UserBriefCopyWith<$Res>(_self.updatedBy!, (value) {
+    return _then(_self.copyWith(updatedBy: value));
+  });
+}
+}
+
+
+/// @nodoc
+mixin _$UserBrief {
+
+ int get id; String get name;
+/// Create a copy of UserBrief
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<UserBrief> get copyWith => _$UserBriefCopyWithImpl<UserBrief>(this as UserBrief, _$identity);
+
+  /// Serializes this UserBrief to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as UserBrief;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserBrief&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as UserBrief;
+  return Object.hash(runtimeType,_this.id,_this.name);
+}
+
+@override
+String toString() {
+  final _this = this as UserBrief;
+  return 'UserBrief(id: ${_this.id}, name: ${_this.name})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UserBriefCopyWith<$Res>  {
+  factory $UserBriefCopyWith(UserBrief value, $Res Function(UserBrief) _then) = _$UserBriefCopyWithImpl;
+@useResult
+$Res call({
+ int id, String name
+});
+
+
+
+
+}
+/// @nodoc
+class _$UserBriefCopyWithImpl<$Res>
+    implements $UserBriefCopyWith<$Res> {
+  _$UserBriefCopyWithImpl(this._self, this._then);
+
+  final UserBrief _self;
+  final $Res Function(UserBrief) _then;
+
+/// Create a copy of UserBrief
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,}) {
+  return _then(UserBrief(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [UserBrief].
+extension UserBriefPatterns on UserBrief {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _UserBrief value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _UserBrief() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _UserBrief value)  $default,){
+final _that = this;
+switch (_that) {
+case _UserBrief():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _UserBrief value)?  $default,){
+final _that = this;
+switch (_that) {
+case _UserBrief() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _UserBrief() when $default != null:
+return $default(_that.id,_that.name);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String name)  $default,) {final _that = this;
+switch (_that) {
+case _UserBrief():
+return $default(_that.id,_that.name);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String name)?  $default,) {final _that = this;
+switch (_that) {
+case _UserBrief() when $default != null:
+return $default(_that.id,_that.name);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _UserBrief implements UserBrief {
+  const _UserBrief({required this.id, required this.name});
+  factory _UserBrief.fromJson(Map<String, dynamic> json) => _$UserBriefFromJson(json);
+
+@override final  int id;
+@override final  String name;
+
+/// Create a copy of UserBrief
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$UserBriefCopyWith<_UserBrief> get copyWith => __$UserBriefCopyWithImpl<_UserBrief>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$UserBriefToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserBrief&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,name);
+}
+
+@override
+String toString() {
+    return 'UserBrief(id: $id, name: $name)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$UserBriefCopyWith<$Res> implements $UserBriefCopyWith<$Res> {
+  factory _$UserBriefCopyWith(_UserBrief value, $Res Function(_UserBrief) _then) = __$UserBriefCopyWithImpl;
+@override @useResult
+$Res call({
+ int id, String name
+});
+
+
+
+
+}
+/// @nodoc
+class __$UserBriefCopyWithImpl<$Res>
+    implements _$UserBriefCopyWith<$Res> {
+  __$UserBriefCopyWithImpl(this._self, this._then);
+
+  final _UserBrief _self;
+  final $Res Function(_UserBrief) _then;
+
+/// Create a copy of UserBrief
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,}) {
+  return _then(_UserBrief(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

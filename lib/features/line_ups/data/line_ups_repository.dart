@@ -1098,6 +1098,9 @@ class LineUpsRepository {
                 worshipLeader: Value(l.worshipLeader),
                 songsCount: Value(l.songsCount),
                 version: Value(l.version),
+                updatedAt: Value(l.updatedAt),
+                updatedById: Value(l.updatedBy?.id),
+                updatedByName: Value(l.updatedBy?.name),
                 // Someone else changed its songs: the cached list is stale.
                 songsLoaded: cached[l.id]?.songsCount == l.songsCount ? const Value.absent() : const Value(false),
               ),
@@ -1216,6 +1219,9 @@ class LineUpsRepository {
           songsLoaded: const Value(true),
           version: Value(detail.version),
           songsVersion: Value(detail.version),
+          updatedAt: Value(detail.updatedAt),
+          updatedById: Value(detail.updatedBy?.id),
+          updatedByName: Value(detail.updatedBy?.name),
         ),
       );
       return;
@@ -1233,6 +1239,9 @@ class LineUpsRepository {
             songsLoaded: const Value(true),
             version: Value(detail.version),
             songsVersion: Value(detail.version),
+            updatedAt: Value(detail.updatedAt),
+            updatedById: Value(detail.updatedBy?.id),
+            updatedByName: Value(detail.updatedBy?.name),
           ),
         );
   }
@@ -1255,6 +1264,8 @@ class LineUpsRepository {
     worshipLeader: row.worshipLeader,
     songsCount: row.songsCount,
     version: row.version,
+    updatedAt: row.updatedAt,
+    updatedBy: SongsRepository.updatedByOf(row.updatedById, row.updatedByName),
   );
 }
 

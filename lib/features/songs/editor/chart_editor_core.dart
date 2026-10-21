@@ -145,6 +145,8 @@ class ChartEditorCore {
 
   void insertRepeat(int count) => _apply(insertRepeatMarker(_content, _cursor, count));
 
+  void insertMeter(String signature) => _apply(insertMeterMarker(_content, _cursor, signature));
+
   /// A bass note from the long-press popup — always a bare letter root.
   void insertBassNote(String letterRoot) => insertText('/[$letterRoot]');
 

@@ -18,8 +18,7 @@ final dashboardControllerProvider = DashboardControllerProvider._();
 /// All of Home's state and actions — the twin of `use-dashboard-page.ts`.
 /// Everything is read from Drift (works offline) except the live session,
 /// which is polled from the network.
-final class DashboardControllerProvider
-    extends $NotifierProvider<DashboardController, DashboardState> {
+final class DashboardControllerProvider extends $NotifierProvider<DashboardController, DashboardState> {
   /// All of Home's state and actions — the twin of `use-dashboard-page.ts`.
   /// Everything is read from Drift (works offline) except the live session,
   /// which is polled from the network.
@@ -43,15 +42,11 @@ final class DashboardControllerProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(DashboardState value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<DashboardState>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<DashboardState>(value));
   }
 }
 
-String _$dashboardControllerHash() =>
-    r'f687c2a9c954fe7edc8e0f9043e450698ed880cb';
+String _$dashboardControllerHash() => r'f687c2a9c954fe7edc8e0f9043e450698ed880cb';
 
 /// All of Home's state and actions — the twin of `use-dashboard-page.ts`.
 /// Everything is read from Drift (works offline) except the live session,
@@ -65,12 +60,7 @@ abstract class _$DashboardController extends $Notifier<DashboardState> {
     final ref = this.ref as $Ref<DashboardState, DashboardState>;
     final element =
         ref.element
-            as $ClassProviderElement<
-              AnyNotifier<DashboardState, DashboardState>,
-              DashboardState,
-              Object?,
-              Object?
-            >;
+            as $ClassProviderElement<AnyNotifier<DashboardState, DashboardState>, DashboardState, Object?, Object?>;
     return element.handleCreate(ref, build);
   }
 }

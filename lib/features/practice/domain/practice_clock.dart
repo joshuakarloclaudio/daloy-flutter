@@ -69,6 +69,12 @@ class PracticeCourse {
 
   ClockSong? _song(int index) => index >= 0 && index < songs.length ? songs[index] : null;
 
+  /// [song]'s bars, in playing order; empty when it has none to walk.
+  List<BarStep> stepsOf(int song) => _song(song)?.steps ?? const [];
+
+  /// [song]'s sections as they run along its bars.
+  Map<String, ({int start, int count})> runsOf(int song) => _song(song)?.runs ?? const {};
+
   BarStep? stepAt(BarPosition p) {
     final steps = _song(p.song)?.steps ?? const [];
     return p.step >= 0 && p.step < steps.length ? steps[p.step] : null;
@@ -193,25 +199,34 @@ class BeatScheduler {
   int _beatsInBar = 4;
   int _countInLeft = 0;
 
+  /// Counting in: the beat of the bar the song comes in on.
+  int _startBeat = 0;
+
   /// The bar the next beat belongs to.
   BarPosition get position => _position;
 
   /// Starts at [from] at time [at], after [countInBars] bars counted in.
-  void start(Duration at, BarPosition from, {int countInBars = 1}) {
+  /// [beat] starts partway into the bar (on a chord after its first).
+  void start(Duration at, BarPosition from, {int countInBars = 1, int beat = 0}) {
     _nextAt = at;
     _position = course.clamp(from);
-    _beat = 0;
     final count = course.beatsPerBarOf(_position.song);
     _countInLeft = countInBars * count;
+    _startBeat = _within(beat);
+    _beat = _countInLeft > 0 ? 0 : _startBeat;
     _beatsInBar = _countInLeft > 0 ? count : course.beatsAt(_position);
   }
+
+  /// [beat] if [_position]'s bar has it, else its downbeat.
+  int _within(int beat) => beat >= 0 && beat < course.beatsAt(_position) ? beat : 0;
 
   /// Plays [to] from the next beat on, keeping the pulse: the beat count
   /// carries on into [to]'s bar (from its downbeat if the bar is too short).
   /// [from] is the first beat handed out but not yet heard: the clock lays
   /// it out again at [to], so the caller drops it and the ones after it.
-  /// Null when nothing is waiting.
-  void jump(BarPosition to, {ClockBeat? from}) {
+  /// Null when nothing is waiting. [beat] is where in [to]'s bar to go on
+  /// (a chord picked); null carries the count on.
+  void jump(BarPosition to, {ClockBeat? from, int? beat}) {
     if (from != null) {
       _nextAt = from.at;
       _beat = from.beat;
@@ -220,9 +235,12 @@ class BeatScheduler {
     }
     _position = course.clamp(to);
     // Counting in: the count carries on, into [to].
-    if (_countInLeft > 0) return;
+    if (_countInLeft > 0) {
+      _startBeat = _within(beat ?? 0);
+      return;
+    }
     _beatsInBar = course.beatsAt(_position);
-    if (_beat >= _beatsInBar) _beat = 0;
+    _beat = beat == null ? _within(_beat) : _within(beat);
   }
 
   /// Every beat that falls before [until], in order.
@@ -249,7 +267,7 @@ class BeatScheduler {
       _countInLeft--;
       _beat++;
       if (_countInLeft == 0) {
-        _beat = 0;
+        _beat = _startBeat;
         _beatsInBar = course.beatsAt(_position);
       }
       return;

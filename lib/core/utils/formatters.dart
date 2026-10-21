@@ -80,6 +80,36 @@ String formatTimeAgo(DateTime? time, [DateTime? now]) {
   return '${diff.inDays}d ago';
 }
 
+/// "Updated 5 minutes ago by Ana" — when a song or line-up last changed,
+/// and who did it ("you" when [isMe]). Past a week, the date instead.
+String formatUpdated(DateTime at, {String? by, bool isMe = false, DateTime? now}) {
+  final local = at.toLocal();
+  final base = now ?? DateTime.now();
+  final diff = base.difference(local);
+  // Calendar days apart; rounded, since a DST change makes one 23 or 25 hours.
+  final days =
+      (DateTime(base.year, base.month, base.day).difference(DateTime(local.year, local.month, local.day)).inHours / 24)
+          .round();
+  String ago(int n, String unit) => n == 1 ? '1 $unit ago' : '$n ${unit}s ago';
+
+  final String label;
+  if (diff.inMinutes < 1) {
+    label = 'Updated just now';
+  } else if (diff.inHours < 1) {
+    label = 'Updated ${ago(diff.inMinutes, 'minute')}';
+  } else if (days == 0) {
+    label = 'Updated ${ago(diff.inHours, 'hour')}';
+  } else if (days == 1) {
+    label = 'Updated yesterday';
+  } else if (days < 7) {
+    label = 'Updated ${ago(days, 'day')}';
+  } else {
+    label = 'Updated on ${(local.year == base.year ? DateFormat.MMMd() : DateFormat.yMMMd()).format(local)}';
+  }
+  final who = isMe ? 'you' : by?.trim();
+  return who == null || who.isEmpty ? label : '$label by $who';
+}
+
 /// "3:07", or "1:02:09" past an hour — a playback position.
 String formatPlaybackTime(Duration d) {
   final total = d.isNegative ? 0 : d.inSeconds;

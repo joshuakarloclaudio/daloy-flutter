@@ -151,6 +151,15 @@ void main() {
       expect(e.content, '[G]\nChorus:\n[C] x2');
     });
 
+    test('a bar time signature is spaced, and brings a barline when the line has none', () {
+      final e = editor('| [G] |');
+      e.insertMeter('2/4');
+      expect(e.content, '| [G] | 2/4 ');
+      final f = editor('');
+      f.insertMeter('3/4');
+      expect(f.content, '| 3/4 ');
+    });
+
     test('a bass note follows the chord as its own token', () {
       final e = editor('[G]');
       e.insertBassNote('B');

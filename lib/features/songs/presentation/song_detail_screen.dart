@@ -20,11 +20,14 @@ import '../../../shared/widgets/segmented_control.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/staggered_entrance.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../../shared/widgets/updated_footnote.dart';
+import '../../auth/application/session_controller.dart';
 import '../../line_ups/domain/line_up.dart';
 import '../../line_ups/presentation/widgets/line_up_cover.dart';
 import '../../sync/realtime_scope.dart';
 import '../../sync/workspace_realtime.dart';
 import '../application/song_detail_controller.dart';
+import '../application/song_sync.dart';
 import '../domain/display_prefs.dart';
 import '../domain/song.dart';
 import 'song_actions.dart';
@@ -198,6 +201,9 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
     final viewMode = _viewOverride ?? state.prefs.viewMode;
     final top = MediaQuery.paddingOf(context).top + DaloyChrome.topBarHeight;
     final bottom = MediaQuery.paddingOf(context).bottom + DaloySpace.s10;
+    final meId = ref.watch(sessionControllerProvider).value?.user.id;
+    // Changes still on their way: the server's "last updated" is behind.
+    final pending = state.sync != null && state.sync!.status != SongSyncStatus.synced;
 
     return SingleChildScrollView(
       physics: _pinching ? const NeverScrollableScrollPhysics() : null,
@@ -330,6 +336,14 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
                         ),
                       ),
                     ),
+                    if (song.updatedAt != null && !pending) ...[
+                      const SizedBox(height: DaloySpace.s8),
+                      UpdatedFootnote(
+                        at: song.updatedAt,
+                        byName: song.updatedBy?.name,
+                        isMe: song.updatedBy != null && song.updatedBy!.id == meId,
+                      ),
+                    ],
                   ],
                 ),
               ),

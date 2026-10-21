@@ -219,8 +219,8 @@ final List<GuideSection> guideSections = [
         title: (en: 'Grouping chords', tl: 'Paghihiwalay ng mga chord'),
         code: '| [C] [G] | [Am] [F] |',
         body: (
-          en: "Two chords in the first bar, two in the second. Without dots or dashes to say exactly when each one lands, practice mode doesn't guess — it highlights both chords together for the whole bar. Add beat placeholders (next section) to place them on specific beats instead.",
-          tl: 'Dalawang chord sa unang bar, dalawa sa pangalawa. Kung walang tuldok o dash na magsasabi kung kailan eksaktong tutunog ang bawat isa, hindi nagha-hulaan ang practice mode — pareho itong ino-highlight sa buong bar. Magdagdag ng beat placeholder (susunod na bahagi) para tumama sila sa tiyak na beat.',
+          en: "Two chords in the first bar, two in the second. With no dots or dashes, the chords split the bar evenly — in 4/4 that's two beats each, and practice mode highlights them one after the other. Add beat placeholders (next section) to place them on other beats.",
+          tl: 'Dalawang chord sa unang bar, dalawa sa pangalawa. Kung walang tuldok o dash, hahatiin nang pantay ng mga chord ang bar — sa 4/4, tig-dalawang beat, at isa-isa silang ino-highlight ng practice mode. Magdagdag ng beat placeholder (susunod na bahagi) para ilagay sila sa ibang beat.',
         ),
       ),
       GuideExample('Verse:\n| [C] [G] | [Am] [F] |'),
@@ -274,11 +274,11 @@ final List<GuideSection> guideSections = [
   ),
   const GuideSection(
     id: 'short-bars',
-    title: (en: 'Short bars', tl: 'Maiksing bar'),
+    title: (en: 'Short and long bars', tl: 'Maiksi at mahabang bar'),
     blocks: [
       GuideText((
-        en: 'Sometimes a chord only needs to ring for part of a bar before the next section starts — a 2-count hold in a 4/4 song, for example. Write fewer beat placeholders than the time signature calls for, and that one bar becomes exactly that short.',
-        tl: 'Minsan, kailangan lang tumunog ang isang chord ng kalahati ng bar bago magsimula ang susunod na bahagi — halimbawa, 2 counts na lang sa isang 4/4 na kanta. Maglagay ng mas kaunting beat placeholder kaysa sa hinihingi ng time signature, at magiging kasingiksi lang niyan ang bar na iyon.',
+        en: "Sometimes a bar doesn't match the time signature — a 2-count hold before the next section, or a chord held two counts past the barline. Write fewer or more beat placeholders than the time signature calls for, and that one bar becomes exactly that long.",
+        tl: 'Minsan, hindi tugma ang isang bar sa time signature — 2 counts na lang bago ang susunod na bahagi, o chord na lumalampas ng dalawang count sa barline. Maglagay ng mas kaunti o mas maraming beat placeholder kaysa sa hinihingi ng time signature, at magiging ganoon mismo kahaba ang bar na iyon.',
       )),
       GuideEntry(
         title: (en: 'A 2-beat bar in 4/4', tl: '2-beat na bar sa 4/4'),
@@ -288,9 +288,25 @@ final List<GuideSection> guideSections = [
           tl: '2 beats muna ang A gaya ng dati, tapos 2 pa bago ang chorus — hindi na kumpletong bar pa. Magiging kasingiksi rin ang click at ang naka-highlight na chord; ang susunod na click ay tatama mismo sa unang chord ng chorus.',
         ),
       ),
+      GuideEntry(
+        title: (en: 'A 6-beat bar in 4/4', tl: '6-beat na bar sa 4/4'),
+        code: '| [G] . [A] . | [F#m] . [Bm] . . . |',
+        body: (
+          en: 'Bm rings for four beats, so this bar is six. Writing it as | [F#m] . [Bm] . | . . | counts the same — a bar of only dots keeps the last chord sounding for that many beats.',
+          tl: 'Apat na beat ang Bm, kaya anim ang bar na ito. Pareho rin ang bilang kapag isinulat bilang | [F#m] . [Bm] . | . . | — ang bar na puro tuldok ay nagpapatuloy sa huling chord nang ganoong karaming beat.',
+        ),
+      ),
+      GuideEntry(
+        title: (en: 'A bar with its own time signature', tl: 'Bar na may sariling time signature'),
+        code: '| 2/4 [Em] [F#m] | [G] . [A] . |',
+        body: (
+          en: "Start a bar with a time signature to set its length. Here the first bar is 2 beats and its two chords split it evenly — one count each — before the 4/4 bars carry on. The TIME keys on the editor's Sections tab insert one.",
+          tl: 'Simulan ang bar sa isang time signature para itakda ang haba nito. Dito, 2 beat ang unang bar at hinahati ito nang pantay ng dalawang chord — tig-isang count — bago bumalik sa 4/4. Ang mga TIME key sa Sections tab ng editor ang naglalagay nito.',
+        ),
+      ),
       GuideText((
-        en: 'This only kicks in when you deliberately write a rhythm with placeholders. A plain | [A] | with no dots always plays a full bar, exactly as before.',
-        tl: 'Gagana lang ito kapag sinadya mong maglagay ng rhythm gamit ang placeholder. Ang plain na | [A] | na walang tuldok ay laging kumpletong bar, gaya noon.',
+        en: 'A plain | [A] | with no dots or time signature always plays a full bar, exactly as before.',
+        tl: 'Ang plain na | [A] | na walang tuldok o time signature ay laging kumpletong bar, gaya noon.',
       ), small: true),
     ],
   ),

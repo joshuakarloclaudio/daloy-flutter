@@ -214,7 +214,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '[G]');
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Close'));
+      await tester.tap(find.bySemanticsLabel('Close'));
       await tester.pumpAndSettle();
       expect(find.text('Discard changes?'), findsOneWidget);
       await tester.tap(find.text('Discard'));
@@ -496,7 +496,7 @@ void main() {
   testWidgets('leaving with edits asks first, and discarding returns nothing', (tester) async {
     final result = await _open(tester);
     await _press(tester, find.bySemanticsLabel('Insert D'));
-    await tester.tap(find.byTooltip('Close'));
+    await tester.tap(find.bySemanticsLabel('Close'));
     await tester.pumpAndSettle();
     expect(find.text('Discard changes?'), findsOneWidget);
     await tester.tap(find.text('Discard'));

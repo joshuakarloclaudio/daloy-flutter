@@ -142,7 +142,11 @@ void main() {
       expect(fromSecondHalf.labelled, isTrue);
       expect(deck.sectionAt(2)!.labelled, isFalse);
       const empty = PresentSong(key: 'e', title: 'B', songId: 6);
-      expect(PresentDeckState(slides: buildSlides([empty])).sectionAt(0), isNull);
+      // A song with no lyrics yet: its blank slide opens the editor to add some.
+      final blank = PresentDeckState(slides: buildSlides([empty])).sectionAt(0)!;
+      expect(blank.blank, isTrue);
+      expect(blank.sectionId, blankSectionId('e'));
+      expect(blank.lines, isEmpty);
     });
 
     test('the edit command survives the trip to the presenter', () {
@@ -488,7 +492,7 @@ void main() {
 
     testWidgets('presents here: the first slide, taps and keys move, B blanks', (tester) async {
       final (c, awake) = await pump(tester);
-      final deck = () => c.read(presentDeckControllerProvider(const PerformSource.lineUp(7))).deck;
+      PresentDeckState deck() => c.read(presentDeckControllerProvider(const PerformSource.lineUp(7))).deck;
 
       expect(awake.held, 1);
       expect(find.text('You call me out'), findsOneWidget);

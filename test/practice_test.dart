@@ -86,11 +86,22 @@ void main() {
       expect(beatsPerBar('waltz'), 4);
     });
 
-    test('separators place the chords on the beats; short bars stay short', () {
+    test('separators place the chords on the beats; bars are as long as they add up to', () {
       expect(barBeatMap(_atoms('[C] - [G] -'), 4), [0, 0, 2, 2]);
       expect(barBeatMap(_atoms('[A] .'), 4), [0, 0]);
-      expect(barBeatMap(_atoms('[C] [G]'), 4), isNull, reason: 'no rhythm written');
-      expect(barBeatMap(_atoms('[C] . . . . [G]'), 4), isNull, reason: 'more than a bar');
+      expect(barBeatMap(_atoms('[F#m] . [Bm] . . .'), 4), [0, 0, 2, 2, 2, 2]);
+    });
+
+    test('chords with no separators split the bar evenly; one chord lights the whole bar', () {
+      expect(barBeatMap(_atoms('[C] [G]'), 4), [0, 0, 1, 1]);
+      expect(barBeatMap(_atoms('[C] [G] [Am]'), 4), isNull, reason: "3 doesn't divide 4");
+      expect(barBeatMap(_atoms('[C]'), 4), isNull);
+    });
+
+    test("a bar's time signature sets its length", () {
+      expect(barBeatMap(_atoms('[Em] [F#m]'), 4, meter: 2), [0, 1]);
+      expect(barBeatMap(_atoms('[G] . .'), 4, meter: 3), [0, 0, 0]);
+      expect(barBeatMap(_atoms('[G] .'), 4, meter: 3), isNull, reason: "separators that don't add up are ignored");
     });
 
     test('repeats expand, % carries the last chords, lyrics take no time', () {
@@ -111,6 +122,63 @@ void main() {
       ], 4);
       expect([for (final s in steps) s.beatCount], [2, 2, 4]);
       expect(steps.first.atomAt(1), 0);
+    });
+
+    test('a six-count bar, written whole or as 4 + 2', () {
+      final whole = songBarTimeline([
+        _section('s', ['| [G] . [A] . | [F#m] . [Bm] . . . |']),
+      ], 4);
+      expect([for (final s in whole) s.beatCount], [4, 6]);
+      expect(whole[1].atomAt(5), 2, reason: 'Bm holds to the end');
+
+      final split = songBarTimeline([
+        _section('s', ['| [F#m] . [Bm] . | . . | % |']),
+      ], 4);
+      expect([for (final s in split) s.beatCount], [4, 2, 2]);
+      expect(split[1].chords, ['Bm'], reason: 'the held beats keep Bm sounding');
+      expect(split[1].beatMap, isNull, reason: 'lit whole, not on the dot');
+      expect(split[2].chords, ['Bm']);
+    });
+
+    test('a 2/4 bar of one-count chords in a 4/4 song', () {
+      final steps = songBarTimeline([
+        _section('s', ['| 2/4 [Em] [F#m] | [G] . [A] . | % |']),
+      ], 4);
+      expect([for (final s in steps) s.beatCount], [2, 4, 4]);
+      expect([steps[0].atomAt(0), steps[0].atomAt(1)], [0, 1]);
+      expect(steps[0].chords, ['Em', 'F#m']);
+    });
+  });
+
+  group('picking a bar', () {
+    test('each bar knows its time round; a chord knows its beat', () {
+      final steps = songBarTimeline([
+        _section('v', ['| [G] | [C] [D] | x2'], repeat: 2),
+      ], 4);
+      expect(
+        [for (final s in steps) (s.cycle, s.pass)],
+        [(0, 0), (0, 0), (0, 1), (0, 1), (1, 0), (1, 0), (1, 1), (1, 1)],
+      );
+      expect(steps[1].beatOf(1), 2, reason: 'D comes in on beat 3');
+      expect(steps[1].beatOf(null), 0);
+      expect(steps[1].chordStart(3), 2);
+      expect(steps[0].beatOf(0), 0, reason: 'one chord: the whole bar');
+    });
+
+    test('a repeated bar goes to the time round the clock is on, else the first', () {
+      final steps = songBarTimeline([
+        _section('v', ['| [G] | [C] | x2', '| [Am] |'], repeat: 2),
+        _section('c', ['| [D] |']),
+      ], 4);
+      // v: G C G C Am (0–4), again (5–9); c: D (10).
+      int? find(String section, int line, int bar, {int? near}) =>
+          stepForBar(steps, sectionId: section, line: line, bar: bar, near: near);
+      expect(find('v', 0, 1), 1, reason: 'nowhere near: the first');
+      expect(find('v', 0, 1, near: 2), 3, reason: 'on the line, second pass: its second pass');
+      expect(find('v', 0, 0, near: 9), 5, reason: 'second cycle, other line: that cycle, first pass');
+      expect(find('v', 1, 0, near: 6), 9);
+      expect(find('v', 0, 0, near: 10), 0, reason: 'from another section: the first');
+      expect(find('v', 3, 0), isNull, reason: 'not played');
     });
   });
 
@@ -215,6 +283,37 @@ void main() {
       final rest = s.fill(const Duration(milliseconds: 2100));
       expect([for (final b in rest) b.countInLeft], [2, 1, null]);
       expect(rest.last.position, const BarPosition(0, 4));
+    });
+
+    test('starts partway into a bar: straight in, or after the count-in', () {
+      final straight = scheduler(content: '| [C] [G] | [D] |')
+        ..start(Duration.zero, BarPosition.start, countInBars: 0, beat: 2);
+      expect(
+        [for (final b in straight.fill(const Duration(milliseconds: 1100))) (b.position.step, b.beat)],
+        [(0, 2), (0, 3), (1, 0)],
+      );
+
+      final counted = scheduler(content: '| [C] [G] | [D] |')..start(Duration.zero, BarPosition.start, beat: 2);
+      final beats = counted.fill(const Duration(milliseconds: 2100));
+      expect([for (final b in beats.take(4)) b.countInLeft], [4, 3, 2, 1]);
+      expect((beats[4].position.step, beats[4].beat, beats[4].isCountIn), (0, 2, false));
+    });
+
+    test('two bars of count-in, or none', () {
+      final two = scheduler()..start(Duration.zero, BarPosition.start, countInBars: 2);
+      expect(two.fill(const Duration(milliseconds: 3600)).every((b) => b.isCountIn), isTrue);
+      final none = scheduler()..start(Duration.zero, BarPosition.start, countInBars: 0);
+      expect(none.fill(const Duration(milliseconds: 100)).single.isCountIn, isFalse);
+    });
+
+    test('a jump to a chord plays on from its beat', () {
+      final s = scheduler(content: '| [A] | [C] [G] |')..start(Duration.zero, BarPosition.start, countInBars: 0);
+      final laid = s.fill(const Duration(milliseconds: 600));
+      s.jump(const BarPosition(0, 1), from: laid[1], beat: 2);
+      expect(
+        [for (final b in s.fill(const Duration(milliseconds: 1600))) (b.position.step, b.beat, b.at.inMilliseconds)],
+        [(1, 2, 500), (1, 3, 1000), (0, 0, 1500)],
+      );
     });
 
     test('a short bar hands over early', () {
@@ -369,6 +468,98 @@ void main() {
         practice.play();
         async.elapse(const Duration(milliseconds: 100));
         expect(practice.beat.value?.countInLeft, 3, reason: 'counts in a bar of 3/4');
+        container.dispose();
+      });
+    });
+
+    test('with the count-in off, Play starts on the bar at once', () {
+      fakeAsync((async) {
+        final (:container, output: _) = setUpPractice(async, [_performSong(0)]);
+        final practice = container.read(practiceControllerProvider(source).notifier);
+        practice.setCountIn(0);
+        practice.play();
+        async.elapse(const Duration(milliseconds: 100));
+        expect(practice.beat.value?.isCountIn, isFalse);
+        expect((practice.beat.value?.position, practice.beat.value?.beat), (BarPosition.start, 0));
+        container.dispose();
+      });
+    });
+
+    test('a chord picked is where Play starts, on its beat; Pause holds the chord', () {
+      fakeAsync((async) {
+        final (:container, output: _) = setUpPractice(async, [_performSong(0, content: 'Verse:\n| [G] | [C] [D] |')]);
+        final practice = container.read(practiceControllerProvider(source).notifier);
+        const verse = 'song-900-section-0';
+
+        expect(practice.seekBar(0, verse, line: 0, bar: 1, atom: 1), isTrue);
+        expect(practice.beat.value?.position, const BarPosition(0, 1));
+        expect(practice.beat.value?.atom, 1, reason: 'D shows as where it starts');
+
+        practice.setCountIn(0);
+        practice.play();
+        async.elapse(const Duration(milliseconds: 100));
+        expect((practice.beat.value?.position.step, practice.beat.value?.beat), (1, 2));
+
+        // Into D's second beat, then pause: Play comes back in on D.
+        async.elapse(const Duration(milliseconds: 500));
+        expect(practice.beat.value?.beat, 3);
+        practice.pause();
+        expect(practice.beat.value?.atom, 1);
+        practice.play();
+        async.elapse(const Duration(milliseconds: 100));
+        expect((practice.beat.value?.position.step, practice.beat.value?.beat), (1, 2));
+        container.dispose();
+      });
+    });
+
+    test('a chord picked while playing plays from its beat, on the pulse', () {
+      fakeAsync((async) {
+        final (:container, output: _) = setUpPractice(async, [_performSong(0, content: 'Verse:\n| [G] | [C] [D] |')]);
+        final practice = container.read(practiceControllerProvider(source).notifier);
+        practice.setCountIn(0);
+        practice.play();
+        async.elapse(const Duration(milliseconds: 100)); // beat 1 of G, at 80ms
+        practice.seekBar(0, 'song-900-section-0', line: 0, bar: 1, atom: 1);
+        expect(practice.beat.value?.position.step, 1);
+        async.elapse(const Duration(milliseconds: 500)); // the next beat, at 580ms
+        expect((practice.beat.value?.position.step, practice.beat.value?.beat), (1, 2));
+        container.dispose();
+      });
+    });
+
+    test('a bar or a section on and back; past the end it stays', () {
+      fakeAsync((async) {
+        final (:container, output: _) = setUpPractice(async, [_performSong(0)]);
+        final practice = container.read(practiceControllerProvider(source).notifier);
+        // Verse: G C G C (0–3); chorus: D Em (4–5).
+        expect(practice.stepBar(-1), isFalse);
+        expect(practice.stepBar(1), isTrue);
+        expect(practice.beat.value?.position.step, 1);
+        expect(practice.stepSection(1), isTrue);
+        expect(practice.beat.value?.position.step, 4);
+        expect(practice.stepSection(1), isFalse);
+        practice.stepBar(1);
+        expect(practice.stepSection(-1), isTrue, reason: 'back to the top of the chorus');
+        expect(practice.beat.value?.position.step, 4);
+        expect(practice.stepSection(-1), isTrue, reason: 'at its top: the verse');
+        expect(practice.beat.value?.position.step, 0);
+        practice.seekStep(0, 5);
+        expect(practice.stepBar(1), isFalse);
+        container.dispose();
+      });
+    });
+
+    test('going outside a loop ends it; inside it stays', () {
+      fakeAsync((async) {
+        final (:container, output: _) = setUpPractice(async, [_performSong(0)]);
+        final practice = container.read(practiceControllerProvider(source).notifier);
+        practice.seekStep(0, 4);
+        practice.toggleLoopHere();
+        expect(container.read(practiceControllerProvider(source)).loop?.sectionId, 'song-900-section-2');
+        practice.stepBar(1);
+        expect(container.read(practiceControllerProvider(source)).loop, isNotNull);
+        practice.seekStep(0, 1);
+        expect(container.read(practiceControllerProvider(source)).loop, isNull);
         container.dispose();
       });
     });
@@ -528,6 +719,24 @@ void main() {
       await tester.tap(find.bySemanticsLabel('Pause'));
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.bySemanticsLabel(RegExp('^Starts here')), findsWidgets);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('the scrubber says where Play starts; its arrows and a tapped chord move it', (tester) async {
+      final c = await open(tester);
+      final practice = c.read(practiceControllerProvider(const PerformSource.lineUp(7)).notifier);
+      expect(find.byType(PracticeScrubber), findsOneWidget);
+      expect(find.text('Verse · Bar 1/4 · G'), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel('Bar on'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Verse · Bar 2/4 · C'), findsOneWidget);
+
+      await tester.tap(find.text('Em', findRichText: true).first);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(practice.beat.value?.position, const BarPosition(0, 5));
+      expect(find.text('Chorus · Bar 2/2 · Em'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
     });

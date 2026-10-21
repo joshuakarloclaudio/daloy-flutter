@@ -18,6 +18,7 @@ class DaloyTopBar extends StatefulWidget implements PreferredSizeWidget {
     this.actions = const [],
     this.centerTitle = false,
     this.transparent = false,
+    this.washed = false,
     this.largeTitle = false,
   });
 
@@ -33,6 +34,10 @@ class DaloyTopBar extends StatefulWidget implements PreferredSizeWidget {
 
   /// No fill, for a bar over artwork (the auth screens).
   final bool transparent;
+
+  /// Over a [PageWash]: clear while the wash shows through, filled once
+  /// content scrolls under it.
+  final bool washed;
 
   /// The screen leads its scroll view with a [LargeTitle] (or [SliverLargeTitle])
   /// carrying the same name. The inline title and the hairline stay hidden
@@ -120,7 +125,7 @@ class _DaloyTopBarState extends State<DaloyTopBar> {
       // Flat chrome: no elevation or scroll-under tint. The Material is only
       // here so fields and ink in `titleWidget` have an ancestor.
       child: Material(
-        color: widget.transparent ? Colors.transparent : c.background,
+        color: widget.transparent || (widget.washed && !_scrolledUnder) ? Colors.transparent : c.background,
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: _scrolledUnder ? c.border : Colors.transparent)),

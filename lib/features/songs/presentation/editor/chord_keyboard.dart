@@ -52,6 +52,9 @@ const sectionNames = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Outro
 const _specialChars = ['-', '|', '/', '_', '.'];
 const _repeatCounts = [2, 3, 4, 8];
 
+/// Time signatures for one bar that doesn't fit the song's (`| 2/4 Em F#m |`).
+const _barMeters = ['2/4', '3/4', '4/4', '6/4'];
+
 enum _Tone { tonic, subdominant, dominant }
 
 /// 1/3/6 tonic, 2/4 subdominant, 5/7 dominant — so a player spots "the V" by hue.
@@ -980,7 +983,6 @@ class _SectionsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -997,35 +999,47 @@ class _SectionsTab extends StatelessWidget {
           ),
         ],
         const SizedBox(height: _groupGap),
-        SizedBox(
-          height: 56,
-          child: Row(
-            children: [
-              Text(
-                'REPEAT',
-                style: context.text.labelSmall!.copyWith(
-                  color: c.mutedForeground,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: DaloySpace.s3),
-              Expanded(
-                child: _row([
-                  for (final n in _repeatCounts)
-                    _Key(
-                      label: 'Insert repeat marker x$n',
-                      onPress: () => core.insertRepeat(n),
-                      child: Text('x$n', style: context.text.titleMedium!.copyWith(fontFamily: 'monospace')),
-                    ),
-                ]),
-              ),
-            ],
-          ),
-        ),
+        _labelledRow(context, 'REPEAT', [
+          for (final n in _repeatCounts)
+            _Key(
+              label: 'Insert repeat marker x$n',
+              onPress: () => core.insertRepeat(n),
+              child: Text('x$n', style: context.text.titleMedium!.copyWith(fontFamily: 'monospace')),
+            ),
+        ]),
+        const SizedBox(height: _gap),
+        _labelledRow(context, 'TIME', [
+          for (final m in _barMeters)
+            _Key(
+              label: 'Insert $m bar',
+              onPress: () => core.insertMeter(m),
+              child: Text(m, style: context.text.titleMedium!.copyWith(fontFamily: 'monospace')),
+            ),
+        ]),
       ],
     );
   }
+
+  Widget _labelledRow(BuildContext context, String label, List<Widget> keys) => SizedBox(
+    height: 48,
+    child: Row(
+      children: [
+        SizedBox(
+          width: 56,
+          child: Text(
+            label,
+            style: context.text.labelSmall!.copyWith(
+              color: context.colors.mutedForeground,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: DaloySpace.s3),
+        Expanded(child: _row(keys)),
+      ],
+    ),
+  );
 }
 
 class _EditTab extends StatelessWidget {

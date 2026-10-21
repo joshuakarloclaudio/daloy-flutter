@@ -3,12 +3,12 @@
 /// reads the same on every platform. Pure Dart: no Flutter, no I/O.
 ///
 /// Charts are plain text with chords in brackets: `[G]Amazing [C]grace`,
-/// `Verse:`, `[Chorus] x2`, and barline rows like `| C G | Am % | x2`.
+/// `Verse:`, `[Chorus] x2`, and barline rows like `| C G | Am % | 2/4 D | x2`.
 library;
 
 import 'chord_math.dart';
 
-enum SegmentKind { chord, section, bar, simile, repeat, text }
+enum SegmentKind { chord, section, bar, simile, repeat, meter, text }
 
 class Segment {
   const Segment(this.kind, this.value, {this.count});
@@ -17,7 +17,7 @@ class Segment {
   final String value;
 
   /// Play count, for [SegmentKind.repeat] (`x2`) and sections written
-  /// `Chorus: x2`.
+  /// `Chorus: x2`; beats, for [SegmentKind.meter] (`2/4` is 2).
   final int? count;
 
   bool get isBlankText => kind == SegmentKind.text && value.trim().isEmpty;
@@ -34,6 +34,17 @@ int? parseRepeatToken(String text) {
   if (match == null) return null;
   final count = int.tryParse(match[1] ?? match[2] ?? '');
   return count != null && count >= 1 ? count : null;
+}
+
+final _meterToken = RegExp(r'^(\d{1,2})/(1|2|4|8|16)$');
+
+/// Beats in a bar-level time signature (`2/4` → 2), or null when `text`
+/// isn't one. Only means anything inside a barline row: `| 2/4 [Em] [F#m] |`
+/// is a two-beat bar in a 4/4 song.
+int? parseMeterToken(String text) {
+  final match = _meterToken.firstMatch(text.trim());
+  final beats = int.tryParse(match?[1] ?? '');
+  return beats != null && beats >= 1 && beats <= 32 ? beats : null;
 }
 
 // "Intro:", "Pre-Chorus:", "Bridge 1:", optionally "Chorus: x2".
@@ -57,6 +68,8 @@ List<Segment>? _splitStructure(String text) {
       pieces.add(Segment(SegmentKind.simile, part));
     } else if (parseRepeatToken(part) case final count?) {
       pieces.add(Segment(SegmentKind.repeat, part, count: count));
+    } else if (parseMeterToken(part) case final beats?) {
+      pieces.add(Segment(SegmentKind.meter, part, count: beats));
     } else {
       return null;
     }
@@ -86,7 +99,10 @@ List<Segment>? _structureChordLine(List<Segment> segments) {
     }
   }
   if (!hasStructure) return null;
-  if (!hasChord && !out.any((s) => s.kind == SegmentKind.bar)) return null;
+  final hasBar = out.any((s) => s.kind == SegmentKind.bar);
+  if (!hasChord && !hasBar) return null;
+  // A time signature belongs to a bar; with no barline it is just text.
+  if (!hasBar && out.any((s) => s.kind == SegmentKind.meter)) return null;
   return out;
 }
 
@@ -133,7 +149,7 @@ List<Segment> parseLine(String line) {
 
 bool isChordOnlyLine(List<Segment> segments) => segments.every(
   (s) => switch (s.kind) {
-    SegmentKind.chord || SegmentKind.bar || SegmentKind.simile || SegmentKind.repeat => true,
+    SegmentKind.chord || SegmentKind.bar || SegmentKind.simile || SegmentKind.repeat || SegmentKind.meter => true,
     SegmentKind.text => s.value.trim().isEmpty,
     SegmentKind.section => false,
   },
@@ -234,7 +250,7 @@ List<List<ChordLyricUnit>> chordLyricWords(List<Segment> segments) {
 
 /// One bar: what is written between two barlines.
 class BarCell {
-  const BarCell(this.atoms, {required this.simile});
+  const BarCell(this.atoms, {required this.simile, this.meter});
 
   /// Chord/placeholder groups; whitespace is the only thing that splits one,
   /// so a slash chord `G/B` stays a single unbreakable unit.
@@ -242,6 +258,10 @@ class BarCell {
 
   /// Written as `%`: sounds as the bar before it.
   final bool simile;
+
+  /// The bar's own time signature (`| 2/4 [Em] [F#m] |`), or null to play
+  /// at the song's. Its [Segment.count] is the bar's beats.
+  final Segment? meter;
 }
 
 List<List<Segment>> _atoms(List<Segment> segments) {
@@ -282,6 +302,7 @@ List<Segment> _trimBlankEdges(List<Segment> segments) {
   final bars = <BarCell>[];
   var pending = <Segment>[];
   var simile = false;
+  Segment? meter;
   var opened = false;
   var repeat = 1;
 
@@ -290,8 +311,11 @@ List<Segment> _trimBlankEdges(List<Segment> segments) {
     // Before the first `|` there is nothing to close unless something was
     // written there — that is what makes the leading barline optional.
     if (opened || content.isNotEmpty || simile) {
-      bars.add(BarCell(_atoms(content), simile: simile));
+      bars.add(BarCell(_atoms(content), simile: simile, meter: meter));
+      meter = null;
     }
+    // `2/4 | [Em] [F#m] |` — a time signature before the first barline
+    // stays with the bar it opens.
     pending = [];
     simile = false;
   }
@@ -305,12 +329,14 @@ List<Segment> _trimBlankEdges(List<Segment> segments) {
         simile = true;
       case SegmentKind.repeat:
         repeat = seg.count ?? 1;
+      case SegmentKind.meter:
+        meter = seg;
       case _:
         pending.add(seg);
     }
   }
   final tail = _trimBlankEdges(pending);
-  if (tail.isNotEmpty || simile) bars.add(BarCell(_atoms(tail), simile: simile));
+  if (tail.isNotEmpty || simile || meter != null) bars.add(BarCell(_atoms(tail), simile: simile, meter: meter));
   return bars.isEmpty ? null : (bars: bars, repeat: repeat);
 }
 

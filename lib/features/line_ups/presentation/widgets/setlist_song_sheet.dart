@@ -22,7 +22,8 @@ import '../../application/line_up_detail_controller.dart';
 
 /// A song from the set, drawn the way this line-up plays it: in its key for
 /// the service, with this user's capo. Swipe sideways through the set. The
-/// pencil goes straight into the chord or lyrics editor for what's showing.
+/// pencil up top edits the song; the chart's own button goes straight into
+/// the chord or lyrics editor for what's showing.
 Future<void> showSetlistSongSheet(BuildContext context, {required int lineUpId, required int position}) =>
     showDaloySheet<void>(
       context: context,
@@ -112,8 +113,8 @@ class _SetlistSongSheetState extends ConsumerState<_SetlistSongSheet> {
               ),
               TopBarIconButton(
                 icon: TablerIcons.pencil,
-                tooltip: chords ? 'Edit chords' : 'Edit lyrics',
-                onPressed: () => edit(current),
+                tooltip: 'Edit song',
+                onPressed: () => context.push(Routes.songEdit(current.entry.song.id)),
               ),
               TopBarIconButton(
                 icon: TablerIcons.music,
@@ -197,6 +198,8 @@ class _SongPage extends StatelessWidget {
     final gutter = DaloySpace.gutter(context);
     final subtitle = [?song.artist, ?song.tempo].join(' · ');
     final p = song.position;
+    final chords = state.prefs.viewMode == SongViewMode.chords;
+    final hasContent = chords ? song.hasChords : song.hasLyrics;
 
     return SingleChildScrollView(
       physics: pinching ? const NeverScrollableScrollPhysics() : null,
@@ -289,29 +292,48 @@ class _SongPage extends StatelessWidget {
                     duration: DaloyMotion.medium,
                     curve: DaloyMotion.ease,
                     alignment: Alignment.topCenter,
-                    child: AnimatedSwitcher(
-                      duration: DaloyMotion.medium,
-                      layoutBuilder: (current, previous) =>
-                          Stack(alignment: Alignment.topLeft, children: [...previous, ?current]),
-                      child: KeyedSubtree(
-                        key: ValueKey(state.prefs.viewMode),
-                        child: switch (state.prefs.viewMode) {
-                          SongViewMode.chords =>
-                            song.hasChords
-                                ? ChordSheet(
-                                    content: song.entry.song.content!,
-                                    transposition: song.chartTransposition,
-                                    zoom: zoom,
-                                    musicalKey: song.originalKey,
-                                    notation: song.notation,
-                                  )
-                                : _Empty('No chords added yet.', action: 'Add chords', onAction: onEdit),
-                          SongViewMode.lyrics =>
-                            song.hasLyrics
-                                ? LyricsSheet(lyrics: song.entry.song.lyrics!, zoom: zoom)
-                                : _Empty('No lyrics added yet.', action: 'Add lyrics', onAction: onEdit),
-                        },
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (hasContent)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: DaloySpace.s2),
+                              child: DaloyButton(
+                                label: chords ? 'Edit chords' : 'Edit lyrics',
+                                icon: chords ? TablerIcons.pencil : TablerIcons.align_left,
+                                variant: ButtonVariant.plain,
+                                size: ControlSize.sm,
+                                onPressed: onEdit,
+                              ),
+                            ),
+                          ),
+                        AnimatedSwitcher(
+                          duration: DaloyMotion.medium,
+                          layoutBuilder: (current, previous) =>
+                              Stack(alignment: Alignment.topLeft, children: [...previous, ?current]),
+                          child: KeyedSubtree(
+                            key: ValueKey(state.prefs.viewMode),
+                            child: switch (state.prefs.viewMode) {
+                              SongViewMode.chords =>
+                                song.hasChords
+                                    ? ChordSheet(
+                                        content: song.entry.song.content!,
+                                        transposition: song.chartTransposition,
+                                        zoom: zoom,
+                                        musicalKey: song.originalKey,
+                                        notation: song.notation,
+                                      )
+                                    : _Empty('No chords added yet.', action: 'Add chords', onAction: onEdit),
+                              SongViewMode.lyrics =>
+                                song.hasLyrics
+                                    ? LyricsSheet(lyrics: song.entry.song.lyrics!, zoom: zoom)
+                                    : _Empty('No lyrics added yet.', action: 'Add lyrics', onAction: onEdit),
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

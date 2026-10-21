@@ -30,6 +30,10 @@ abstract class Song with _$Song {
 
     /// Bumped by the server on every change.
     @Default(1) int version,
+
+    /// The last shared change: when, and who (null for older changes).
+    DateTime? updatedAt,
+    UserBrief? updatedBy,
   }) = _Song;
 
   factory Song.fromJson(Map<String, dynamic> json) => _$SongFromJson(json);
@@ -44,6 +48,14 @@ abstract class Song with _$Song {
     if (key case final k? when k.isNotEmpty) return 'Key of $k';
     return null;
   }
+}
+
+/// `UserBriefData` — a teammate, named.
+@freezed
+abstract class UserBrief with _$UserBrief {
+  const factory UserBrief({required int id, required String name}) = _UserBrief;
+
+  factory UserBrief.fromJson(Map<String, dynamic> json) => _$UserBriefFromJson(json);
 }
 
 /// `GET /api/songs` — a raw Laravel paginator (no envelope).

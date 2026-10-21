@@ -47,7 +47,7 @@ Future<void> _pump(WidgetTester tester, {bool hidden = false, bool online = true
 void main() {
   testWidgets('shows the live performance with a Join action', (tester) async {
     await _pump(tester);
-    expect(find.text('LIVE NOW · 3 PEOPLE'), findsOneWidget);
+    expect(find.text('Live now · 3 people'), findsOneWidget);
     expect(find.text('Live performance'), findsOneWidget);
     expect(find.text('Join'), findsOneWidget);
   });

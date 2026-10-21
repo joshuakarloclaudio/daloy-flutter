@@ -6,6 +6,7 @@ import 'package:daloy_flutter/features/auth/domain/auth_user.dart';
 import 'package:daloy_flutter/features/search/presentation/search_button.dart';
 import 'package:daloy_flutter/features/workspaces/data/workspaces_repository.dart';
 import 'package:daloy_flutter/features/workspaces/domain/workspace.dart';
+import 'package:daloy_flutter/shared/widgets/daloy_button.dart';
 import 'package:daloy_flutter/shared/widgets/daloy_top_bar.dart';
 import 'package:daloy_flutter/shell/shell_layout.dart';
 import 'package:daloy_flutter/shell/tablet_shell.dart';
@@ -113,7 +114,7 @@ void main() {
     expect(tester.getTopLeft(find.byKey(const Key('screen'))).dx, 0);
     // The tabs own the bar row: no inline title, no second magnifier.
     expect(find.byType(TopBarSearchButton), findsOneWidget);
-    expect(find.byTooltip('Search'), findsNothing);
+    expect(find.descendant(of: find.byType(TopBarSearchButton), matching: find.byType(TopBarIconButton)), findsNothing);
   });
 
   testWidgets('a tab in the capsule selects its branch', (tester) async {

@@ -36,7 +36,9 @@ Future<void> editSongChords(BuildContext context, WidgetRef ref, Song song) asyn
     notation: ChordNotation.parse(ref.read(sessionControllerProvider).value?.user.chordNotation),
   );
   if (edited == null || edited == (song.content ?? '')) return;
+  final push = _songEditPusher(ref, repo);
   await repo.setChords(song.id, edited);
+  push();
   showDaloyToast(messenger, 'Chords saved to “${song.title}”.');
 }
 
@@ -46,8 +48,20 @@ Future<void> editSongLyrics(BuildContext context, WidgetRef ref, Song song) asyn
   final repo = ref.read(songDetailRepositoryProvider);
   final edited = await showLyricsEditor(context, lyrics: song.lyrics ?? '');
   if (edited == null || edited == (song.lyrics ?? '')) return;
+  final push = _songEditPusher(ref, repo);
   await repo.setLyrics(song.id, edited);
+  push();
   showDaloyToast(messenger, 'Lyrics saved to “${song.title}”.');
+}
+
+/// Sends a queued edit now rather than at the next sync. Reads [ref] up
+/// front: the row that opened the editor may be gone once the save lands.
+void Function() _songEditPusher(WidgetRef ref, SongDetailRepository repo) {
+  final workspaceId = ref.read(activeWorkspaceIdProvider);
+  final online = ref.read(isOnlineProvider);
+  return () {
+    if (workspaceId != null && online) unawaited(repo.flush(workspaceId));
+  };
 }
 
 /// A song's actions — from a row's touch-and-hold, or the details screen's

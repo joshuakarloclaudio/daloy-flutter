@@ -52,9 +52,14 @@ class PracticeBeat {
     this.serial = 0,
     this.barNumber,
     this.barCount,
+    this.startBeat = 0,
   });
 
   final BarPosition position;
+
+  /// Waiting (paused, counting in): the beat of [step] the song comes in on —
+  /// past 0 when it starts on a chord after the bar's first.
+  final int startBeat;
 
   /// Counts up with every beat heard, so a flash can tell two beats apart
   /// even on a one-bar loop.
@@ -79,8 +84,11 @@ class PracticeBeat {
   bool get isCountIn => countInLeft != null;
   bool get isAccent => beat == 0;
 
-  /// The atom sounding in [step], or null to light the whole bar.
-  int? get atom => isCountIn || beat == null ? null : step?.atomAt(beat!);
+  bool get isWaiting => !playing || isCountIn || beat == null;
+
+  /// The atom sounding in [step] (or, waiting, the one it starts on), or
+  /// null to light the whole bar.
+  int? get atom => isWaiting ? (startBeat == 0 ? null : step?.atomAt(startBeat)) : step?.atomAt(beat!);
 
   @override
   bool operator ==(Object other) =>
@@ -93,10 +101,12 @@ class PracticeBeat {
       other.playing == playing &&
       other.serial == serial &&
       other.barNumber == barNumber &&
-      other.barCount == barCount;
+      other.barCount == barCount &&
+      other.startBeat == startBeat;
 
   @override
-  int get hashCode => Object.hash(position, step, beat, beatsInBar, countInLeft, playing, serial, barNumber, barCount);
+  int get hashCode =>
+      Object.hash(position, step, beat, beatsInBar, countInLeft, playing, serial, barNumber, barCount, startBeat);
 }
 
 @immutable
@@ -213,8 +223,10 @@ class PracticeController extends _$PracticeController {
   final _deliveries = <Timer, ClockBeat>{};
   int _serial = 0;
 
-  /// Where Play starts from: the bar paused on, or the one picked since.
+  /// Where Play starts from: the bar paused on, or the one picked since,
+  /// and the beat in it (a chord after the bar's first).
   BarPosition? _held;
+  int _heldBeat = 0;
 
   @override
   PracticeState build(PerformSource source) {
@@ -265,6 +277,12 @@ class PracticeController extends _$PracticeController {
     tempoPercent: stateOrNull?.tempoPercent ?? 100,
   );
 
+  /// The bars of [song] as the clock walks them; empty with none (lyrics).
+  List<BarStep> barsOf(int song) => _course.stepsOf(song);
+
+  /// The song the clock is on (or would start on).
+  int get clockSong => beat.value?.position.song ?? _perform.songIndex;
+
   /// The tempo of the song the clock is on (or would start on).
   SongTempo? get currentTempo {
     final perform = _perform;
@@ -298,7 +316,12 @@ class PracticeController extends _$PracticeController {
     if (!audio && !state.noAudio) state = state.copyWith(noAudio: true);
 
     // A bar picked while the audio opened is where it starts.
-    _scheduler.start(_output.now() + _startLead, _course.clamp(_held!));
+    _scheduler.start(
+      _output.now() + _startLead,
+      _course.clamp(_held!),
+      countInBars: state.prefs.practiceCountIn,
+      beat: _heldBeat,
+    );
     _pump();
     _timer = Timer.periodic(_tick, (_) => _pump());
     return true;
@@ -317,13 +340,15 @@ class PracticeController extends _$PracticeController {
     return start ?? BarPosition(perform.songIndex, 0);
   }
 
-  /// Holds the bar being played; Play picks up from it after a count-in.
+  /// Holds the chord being played; Play picks up from it (after a count-in,
+  /// if one is set).
   void pause() {
     if (!state.playing) return;
     _stopTimers();
     _output.cancelPending();
     final shown = beat.value;
     _held = shown?.position ?? _held;
+    if (shown != null && !shown.isCountIn && shown.beat != null) _heldBeat = shown.step?.chordStart(shown.beat!) ?? 0;
     state = state.copyWith(playing: false);
     if (_held != null) _publishHeld(_held!);
   }
@@ -377,8 +402,10 @@ class PracticeController extends _$PracticeController {
       serial: ++_serial,
       barNumber: run?.number,
       barCount: run?.count,
+      startBeat: b.isCountIn ? _startBeatAt(b.position) : 0,
     );
     _held = b.position;
+    if (!b.isCountIn) _heldBeat = 0;
 
     // Haptics: the count-in always (it's how you know it's coming), the rest by choice.
     if (b.isCountIn || state.prefs.practiceHaptics) {
@@ -416,19 +443,93 @@ class PracticeController extends _$PracticeController {
   /// A song was jumped to (swipe, setlist, next/previous).
   void seekSong(int song) => _goTo(BarPosition(song, 0));
 
-  void _goTo(BarPosition to) {
+  /// A chord tapped in the chart: the written bar [line]/[bar] of
+  /// [sectionId], from [atom]'s beat (null: the bar's first). A repeated bar
+  /// goes to the time round the clock is on. False when the bar isn't played.
+  bool seekBar(int song, String sectionId, {required int line, required int bar, int? atom}) {
+    final at = beat.value?.position;
+    final step = stepForBar(
+      _course.stepsOf(song),
+      sectionId: sectionId,
+      line: line,
+      bar: bar,
+      near: at?.song == song ? at!.step : null,
+    );
+    if (step == null) return false;
+    final to = BarPosition(song, step);
+    _seek(to, onBeat: _course.stepAt(to)!.beatOf(atom));
+    unawaited(HapticFeedback.selectionClick());
+    return true;
+  }
+
+  /// A bar picked on the scrubber.
+  void seekStep(int song, int step) => _seek(BarPosition(song, step));
+
+  /// One bar on ([delta] 1) or back (-1) within the song. False at either end.
+  bool stepBar(int delta) {
+    final at = _clockAt;
+    final count = _course.stepsOf(at.song).length;
+    final to = at.step + delta;
+    if (count == 0 || to < 0 || to >= count) {
+      unawaited(HapticFeedback.heavyImpact());
+      return false;
+    }
+    _seek(BarPosition(at.song, to));
+    unawaited(HapticFeedback.selectionClick());
+    return true;
+  }
+
+  /// The next section ([delta] 1), or back (-1): to the top of the one
+  /// playing, or the one before when already at its top. False at either end.
+  bool stepSection(int delta) {
+    final at = _clockAt;
+    final runs = _course.runsOf(at.song).values.map((r) => r.start).toList()..sort();
+    final current = runs.lastIndexWhere((start) => start <= at.step);
+    final int? to;
+    if (delta > 0) {
+      to = current + 1 < runs.length ? runs[current + 1] : null;
+    } else if (current >= 0 && runs[current] < at.step) {
+      to = runs[current];
+    } else {
+      to = current > 0 ? runs[current - 1] : null;
+    }
+    if (to == null) {
+      unawaited(HapticFeedback.heavyImpact());
+      return false;
+    }
+    _seek(BarPosition(at.song, to));
+    unawaited(HapticFeedback.selectionClick());
+    return true;
+  }
+
+  /// Where the clock is, or would start.
+  BarPosition get _clockAt => _course.clamp(beat.value?.position ?? _held ?? _startOf(_perform));
+
+  /// Goes to [to], ending a loop it's outside of.
+  void _seek(BarPosition to, {int? onBeat}) {
+    final target = _course.clamp(to);
+    final loop = _course.loop;
+    if (loop != null && (loop.song != target.song || target.step < loop.start || target.step >= loop.end)) {
+      setLoop(null);
+    }
+    _goTo(target, onBeat: onBeat);
+  }
+
+  void _goTo(BarPosition to, {int? onBeat}) {
     final target = _course.clamp(to);
     if (_timer != null) {
-      _jump(target);
+      _jump(target, onBeat: onBeat);
     } else {
       _held = target;
+      _heldBeat = onBeat ?? 0;
       _publishHeld(target);
     }
   }
 
-  /// Playing: the clock goes to [to] now, keeping the pulse. Beats laid out
-  /// but not heard yet are dropped and laid out again at [to].
-  void _jump(BarPosition to) {
+  /// Playing: the clock goes to [to] now, keeping the pulse — from [onBeat]
+  /// of its bar, or carrying the count on. Beats laid out but not heard yet
+  /// are dropped and laid out again at [to].
+  void _jump(BarPosition to, {int? onBeat}) {
     final now = _output.now();
     final waiting = _deliveries.entries.where((e) => e.value.at > now).toList()
       ..sort((a, b) => a.value.at.compareTo(b.value.at));
@@ -437,15 +538,17 @@ class PracticeController extends _$PracticeController {
       _deliveries.remove(e.key);
     }
     _output.cancelPending();
-    _scheduler.jump(to, from: waiting.firstOrNull?.value);
+    _scheduler.jump(to, from: waiting.firstOrNull?.value, beat: onBeat);
     _held = to;
+    _heldBeat = onBeat ?? 0;
 
     // Show it now, not on the next beat; the beat on screen moves with it.
     final shown = beat.value;
     final step = _course.stepAt(to);
     final run = _course.runAt(to);
-    final beats = shown?.isCountIn ?? false ? shown!.beatsInBar : _course.beatsAt(to);
-    final at = shown?.beat;
+    final counting = shown?.isCountIn ?? false;
+    final beats = counting ? shown!.beatsInBar : _course.beatsAt(to);
+    final at = counting ? shown!.beat : onBeat ?? shown?.beat;
     beat.value = PracticeBeat(
       position: to,
       step: step,
@@ -456,6 +559,7 @@ class PracticeController extends _$PracticeController {
       serial: shown?.serial ?? _serial,
       barNumber: run?.number,
       barCount: run?.count,
+      startBeat: counting ? _startBeatAt(to) : 0,
     );
     _followClock(to, step);
     _pump();
@@ -471,9 +575,13 @@ class PracticeController extends _$PracticeController {
       beatsInBar: _course.beatsAt(at),
       barNumber: run?.number,
       barCount: run?.count,
+      startBeat: _startBeatAt(at),
     );
     _followClock(at, step);
   }
+
+  /// The held beat, if [at]'s bar has it.
+  int _startBeatAt(BarPosition at) => _heldBeat < _course.beatsAt(at) ? _heldBeat : 0;
 
   // -- Looping ----------------------------------------------------------------------
 
@@ -490,6 +598,13 @@ class PracticeController extends _$PracticeController {
     final inside = at != null && at.song == song && _course.stepAt(at)?.sectionId == sectionId;
     if (!inside) _goTo(_course.sectionStart(song, sectionId)!);
     unawaited(HapticFeedback.selectionClick());
+  }
+
+  /// Loops the section the clock is in (again stops looping).
+  void toggleLoopHere() {
+    final at = _clockAt;
+    final section = _course.stepAt(at)?.sectionId;
+    if (section != null) toggleLoop(at.song, section);
   }
 
   void setLoop(SectionLoop? loop) {
@@ -573,6 +688,12 @@ class PracticeController extends _$PracticeController {
   Future<void> setHaptics(bool on) {
     state = state.copyWith(prefs: state.prefs.copyWithPractice(haptics: on));
     return ref.read(performPrefsRepositoryProvider).setPracticeHaptics(on);
+  }
+
+  /// Bars counted in before Play starts; 0 starts straight away.
+  Future<void> setCountIn(int bars) {
+    state = state.copyWith(prefs: state.prefs.copyWithPractice(countIn: bars));
+    return ref.read(performPrefsRepositoryProvider).setPracticeCountIn(bars);
   }
 
   Future<void> setFlash(bool on) {

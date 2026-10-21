@@ -267,7 +267,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
       lower:
           media.size.height -
           media.padding.bottom -
-          (_chromeVisible ? performBottomChromeHeight : 0) -
+          (_chromeVisible ? _bottomChrome : 0) -
           (ref.read(musicPlayerProvider).isOpen ? performPlayerStripHeight : 0) -
           DaloySpace.s2,
     );
@@ -422,6 +422,48 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
   }
 
   Future<void> _openTempo() => _overlay(() => showPracticeTempoSheet(context, widget.source));
+
+  /// What the bottom chrome covers: the transport, and in Practice the
+  /// scrubber over it when the song has bars.
+  double get _bottomChrome =>
+      performBottomChromeHeight +
+      (widget.practice ? practiceScrubberRoom(hasBars: _practice.barsOf(_practice.clockSong).isNotEmpty) : 0);
+
+  /// A bar or chord tapped in the chart: the clock goes there.
+  void _seekBar(int song, String sectionId, {required int line, required int bar, int? atom}) {
+    if (!_practice.seekBar(song, sectionId, line: line, bar: bar, atom: atom)) return;
+    setState(() => _drifted = false);
+    _scheduleHide();
+  }
+
+  /// Scrubbing: paused, where Play starts follows the finger; playing, the
+  /// chart goes to look and the clock jumps there once it lets go.
+  void _scrub(int song, int step, {required bool done}) {
+    if (done || !_playing) _practice.seekStep(song, step);
+    final section = _practice.barsOf(song).elementAtOrNull(step)?.sectionId;
+    if (section != null) _revealSection(section);
+    if (done && _drifted) setState(() => _drifted = false);
+  }
+
+  /// A bar on or back (the scrubber's arrows, ← →); a section with [section].
+  void _nudge(int delta, {bool section = false}) {
+    final moved = section ? _practice.stepSection(delta) : _practice.stepBar(delta);
+    if (!moved) return;
+    if (_drifted) setState(() => _drifted = false);
+    _follow();
+  }
+
+  /// The practice speed, a notch at a time (- and =), within the sheet's range.
+  void _nudgeSpeed(int delta) {
+    final percent = ref.read(_practiceProvider).tempoPercent;
+    final next = (percent + delta).clamp(50, 120);
+    if (next == percent) {
+      unawaited(HapticFeedback.heavyImpact());
+      return;
+    }
+    _practice.setTempoPercent(next);
+    _toast(next == 100 ? 'Full speed' : 'Speed $next%');
+  }
 
   /// The clock moved: the chart follows it to each new section (or song),
   /// unless you've scrolled away — the next section brings it back.
@@ -578,7 +620,9 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
       return _setCuesDocked(!_cuesDocked);
     }
     _markCuesSeen();
-    unawaited(_overlay(() => showCueChat(context, lineUpId: _lineUpId, onSent: _onCueSent)).whenComplete(_markCuesSeen));
+    unawaited(
+      _overlay(() => showCueChat(context, lineUpId: _lineUpId, onSent: _onCueSent)).whenComplete(_markCuesSeen),
+    );
   }
 
   void _onLiveEnded(LiveEnd? why) {
@@ -696,10 +740,29 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
     if (event is KeyUpEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
     final shift = HardwareKeyboard.instance.isShiftPressed;
+    // Held, ← → keep stepping.
+    if (widget.practice && (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight)) {
+      _nudge(key == LogicalKeyboardKey.arrowRight ? 1 : -1, section: shift);
+      return KeyEventResult.handled;
+    }
     if (widget.practice && event is KeyDownEvent) {
-      // Practice: space plays and pauses, M mutes the click, R restarts.
+      // Practice: space plays and pauses, M mutes the click, R restarts,
+      // ← → step a bar (a section with shift), L loops the section, T opens
+      // the tempo, - and = change the speed. Up/down still turn the page.
       if (key == LogicalKeyboardKey.space) {
         unawaited(_togglePlay());
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyL) {
+        _practice.toggleLoopHere();
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyT) {
+        unawaited(_openTempo());
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.minus || key == LogicalKeyboardKey.equal) {
+        _nudgeSpeed(key == LogicalKeyboardKey.equal ? 5 : -5);
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.keyM) {
@@ -867,7 +930,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
       media.padding.top + performTopChromeHeight + DaloySpace.s4,
       gutter + media.padding.right,
       // Run-out under the last song, so it too can be read from the top.
-      media.padding.bottom + performBottomChromeHeight + strip + media.size.height * 0.4,
+      media.padding.bottom + _bottomChrome + strip + media.size.height * 0.4,
     );
     final zoom = _pinchZoom ?? state.chart.zoom.toDouble();
     final hasSetlist = state.songs.length > 1;
@@ -878,6 +941,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
             flash: practice.prefs.practiceFlash,
             loop: practice.loop,
             onLoop: _practice.toggleLoop,
+            onSeekBar: _seekBar,
           );
     final loop = practice?.loop;
     final loopLabel = loop == null || loop.song >= state.songs.length
@@ -986,6 +1050,8 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
                       onPrev: state.hasPrev ? _previousSong : null,
                       onNext: state.hasNext ? _nextSong : null,
                       onOpenTempo: () => unawaited(_openTempo()),
+                      onScrub: _scrub,
+                      onNudge: _nudge,
                     )
                   : PerformTransport(
                       state: state,
@@ -1004,7 +1070,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
             left: 0,
             right: 0,
             // Above the transport; on its own at the bottom once that's gone.
-            bottom: _chromeVisible ? performBottomChromeHeight : 0,
+            bottom: _chromeVisible ? _bottomChrome : 0,
             child: Listener(
               onPointerDown: (_) => _scheduleHide(),
               child: PerformPlayerStrip(source: widget.source),
@@ -1029,7 +1095,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
         ),
         if (_canLive)
           Positioned(
-            bottom: media.padding.bottom + (_chromeVisible ? performBottomChromeHeight : 0) + strip + DaloySpace.s3,
+            bottom: media.padding.bottom + (_chromeVisible ? _bottomChrome : 0) + strip + DaloySpace.s3,
             left: DaloySpace.s4,
             right: DaloySpace.s4,
             child: Center(child: BackToLivePill(lineUpId: _lineUpId)),
@@ -1049,7 +1115,7 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
             ),
           ),
           Positioned(
-            bottom: media.padding.bottom + (_chromeVisible ? performBottomChromeHeight : 0) + strip + DaloySpace.s3,
+            bottom: media.padding.bottom + (_chromeVisible ? _bottomChrome : 0) + strip + DaloySpace.s3,
             left: DaloySpace.s4,
             right: DaloySpace.s4,
             child: Center(
@@ -1089,7 +1155,9 @@ class _PerformScreenState extends ConsumerState<PerformScreen> with WidgetsBindi
     if (!docked) return chart;
     return Row(
       children: [
-        Expanded(child: MediaQuery(data: media, child: chart)),
+        Expanded(
+          child: MediaQuery(data: media, child: chart),
+        ),
         CuePanel(
           lineUpId: _lineUpId,
           // Safe-area on the right belongs to the panel, which sits against that edge.

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/daloy_theme.dart';
+
 /// The colours generated artwork is drawn in. Every palette stays inside the
 /// teal family so the one-accent rule holds; [today] (Today Emerald) is kept
 /// for the line-up happening today, and [past] for what's gone quiet.
@@ -287,6 +289,68 @@ class ArtworkWash extends StatelessWidget {
             stops: const [0, 0.6, 1],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// [ArtworkWash] for a screen with an ordinary [Scaffold] and top bar: the
+/// wash runs behind the bar and scrolls away with the content. Give the
+/// [Scaffold] a transparent background and its [DaloyTopBar] `washed: true`,
+/// so the bar stays clear over the wash and fills once content is under it.
+class PageWash extends StatefulWidget {
+  const PageWash({super.key, required this.palette, required this.child, this.height = 340});
+
+  final FlowPalette palette;
+  final Widget child;
+
+  /// How far the wash reaches below the top bar.
+  final double height;
+
+  @override
+  State<PageWash> createState() => _PageWashState();
+}
+
+class _PageWashState extends State<PageWash> {
+  final _offset = ValueNotifier<double>(0);
+
+  @override
+  void dispose() {
+    _offset.dispose();
+    super.dispose();
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth == 0 && n.metrics.axis == Axis.vertical) _offset.value = math.max(0, n.metrics.pixels);
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final background = context.colors.background;
+    final top = MediaQuery.paddingOf(context).top + DaloyChrome.topBarHeight;
+    return ColoredBox(
+      color: background,
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: top + widget.height,
+            child: ValueListenableBuilder<double>(
+              valueListenable: _offset,
+              builder: (_, offset, child) => Transform.translate(offset: Offset(0, -offset), child: child),
+              child: AnimatedSwitcher(
+                duration: DaloyMotion.medium,
+                // The wash has no size of its own: fill the band, or it draws at zero.
+                layoutBuilder: (current, previous) => Stack(fit: StackFit.expand, children: [...previous, ?current]),
+                child: ArtworkWash(key: ValueKey(widget.palette), palette: widget.palette, background: background),
+              ),
+            ),
+          ),
+          NotificationListener<ScrollNotification>(onNotification: _onScroll, child: widget.child),
+        ],
       ),
     );
   }

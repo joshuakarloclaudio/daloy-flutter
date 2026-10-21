@@ -17,7 +17,8 @@ T _$identity<T>(T value) => value;
 mixin _$LineUp {
 
  int get id; String get title;/// `YYYY-MM-DD`.
- String get date; String? get worshipLeader; int get songsCount; int get version;
+ String get date; String? get worshipLeader; int get songsCount; int get version;/// The last shared change — details, set, keys, notes or arrangement.
+ DateTime? get updatedAt; UserBrief? get updatedBy;
 /// Create a copy of LineUp
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -31,20 +32,20 @@ $LineUpCopyWith<LineUp> get copyWith => _$LineUpCopyWithImpl<LineUp>(this as Lin
 @override
 bool operator ==(Object other) {
   final _this = this as LineUp;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LineUp&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.date, _this.date) || other.date == _this.date)&&(identical(other.worshipLeader, _this.worshipLeader) || other.worshipLeader == _this.worshipLeader)&&(identical(other.songsCount, _this.songsCount) || other.songsCount == _this.songsCount)&&(identical(other.version, _this.version) || other.version == _this.version));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LineUp&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.date, _this.date) || other.date == _this.date)&&(identical(other.worshipLeader, _this.worshipLeader) || other.worshipLeader == _this.worshipLeader)&&(identical(other.songsCount, _this.songsCount) || other.songsCount == _this.songsCount)&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.updatedBy, _this.updatedBy) || other.updatedBy == _this.updatedBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as LineUp;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.date,_this.worshipLeader,_this.songsCount,_this.version);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.date,_this.worshipLeader,_this.songsCount,_this.version,_this.updatedAt,_this.updatedBy);
 }
 
 @override
 String toString() {
   final _this = this as LineUp;
-  return 'LineUp(id: ${_this.id}, title: ${_this.title}, date: ${_this.date}, worshipLeader: ${_this.worshipLeader}, songsCount: ${_this.songsCount}, version: ${_this.version})';
+  return 'LineUp(id: ${_this.id}, title: ${_this.title}, date: ${_this.date}, worshipLeader: ${_this.worshipLeader}, songsCount: ${_this.songsCount}, version: ${_this.version}, updatedAt: ${_this.updatedAt}, updatedBy: ${_this.updatedBy})';
 }
 
 
@@ -55,11 +56,11 @@ abstract mixin class $LineUpCopyWith<$Res>  {
   factory $LineUpCopyWith(LineUp value, $Res Function(LineUp) _then) = _$LineUpCopyWithImpl;
 @useResult
 $Res call({
- int id, String title, String date, String? worshipLeader, int songsCount, int version
+ int id, String title, String date, String? worshipLeader, int songsCount, int version, DateTime? updatedAt, UserBrief? updatedBy
 });
 
 
-
+$UserBriefCopyWith<$Res>? get updatedBy;
 
 }
 /// @nodoc
@@ -72,7 +73,7 @@ class _$LineUpCopyWithImpl<$Res>
 
 /// Create a copy of LineUp
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? version = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? version = null,Object? updatedAt = freezed,Object? updatedBy = freezed,}) {
   return _then(LineUp(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -80,10 +81,24 @@ as String,date: null == date ? _self.date : date // ignore: cast_nullable_to_non
 as String,worshipLeader: freezed == worshipLeader ? _self.worshipLeader : worshipLeader // ignore: cast_nullable_to_non_nullable
 as String?,songsCount: null == songsCount ? _self.songsCount : songsCount // ignore: cast_nullable_to_non_nullable
 as int,version: null == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
-as int,
+as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedBy: freezed == updatedBy ? _self.updatedBy : updatedBy // ignore: cast_nullable_to_non_nullable
+as UserBrief?,
   ));
 }
+/// Create a copy of LineUp
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<$Res>? get updatedBy {
+    if (_self.updatedBy == null) {
+    return null;
+  }
 
+  return $UserBriefCopyWith<$Res>(_self.updatedBy!, (value) {
+    return _then(_self.copyWith(updatedBy: value));
+  });
+}
 }
 
 
@@ -165,10 +180,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  int version)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LineUp() when $default != null:
-return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.version);case _:
+return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.version,_that.updatedAt,_that.updatedBy);case _:
   return orElse();
 
 }
@@ -186,10 +201,10 @@ return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsC
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  int version)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)  $default,) {final _that = this;
 switch (_that) {
 case _LineUp():
-return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.version);case _:
+return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.version,_that.updatedAt,_that.updatedBy);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +221,10 @@ return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsC
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  int version)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)?  $default,) {final _that = this;
 switch (_that) {
 case _LineUp() when $default != null:
-return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.version);case _:
+return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.version,_that.updatedAt,_that.updatedBy);case _:
   return null;
 
 }
@@ -221,7 +236,7 @@ return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsC
 @JsonSerializable()
 
 class _LineUp extends LineUp {
-  const _LineUp({required this.id, required this.title, required this.date, this.worshipLeader, this.songsCount = 0, this.version = 1}): super._();
+  const _LineUp({required this.id, required this.title, required this.date, this.worshipLeader, this.songsCount = 0, this.version = 1, this.updatedAt, this.updatedBy}): super._();
   factory _LineUp.fromJson(Map<String, dynamic> json) => _$LineUpFromJson(json);
 
 @override final  int id;
@@ -231,6 +246,9 @@ class _LineUp extends LineUp {
 @override final  String? worshipLeader;
 @override@JsonKey() final  int songsCount;
 @override@JsonKey() final  int version;
+/// The last shared change — details, set, keys, notes or arrangement.
+@override final  DateTime? updatedAt;
+@override final  UserBrief? updatedBy;
 
 /// Create a copy of LineUp
 /// with the given fields replaced by the non-null parameter values.
@@ -245,18 +263,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LineUp&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.date, date) || other.date == date)&&(identical(other.worshipLeader, worshipLeader) || other.worshipLeader == worshipLeader)&&(identical(other.songsCount, songsCount) || other.songsCount == songsCount)&&(identical(other.version, version) || other.version == version));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LineUp&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.date, date) || other.date == date)&&(identical(other.worshipLeader, worshipLeader) || other.worshipLeader == worshipLeader)&&(identical(other.songsCount, songsCount) || other.songsCount == songsCount)&&(identical(other.version, version) || other.version == version)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.updatedBy, updatedBy) || other.updatedBy == updatedBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,date,worshipLeader,songsCount,version);
+    return Object.hash(runtimeType,id,title,date,worshipLeader,songsCount,version,updatedAt,updatedBy);
 }
 
 @override
 String toString() {
-    return 'LineUp(id: $id, title: $title, date: $date, worshipLeader: $worshipLeader, songsCount: $songsCount, version: $version)';
+    return 'LineUp(id: $id, title: $title, date: $date, worshipLeader: $worshipLeader, songsCount: $songsCount, version: $version, updatedAt: $updatedAt, updatedBy: $updatedBy)';
 }
 
 
@@ -267,11 +285,11 @@ abstract mixin class _$LineUpCopyWith<$Res> implements $LineUpCopyWith<$Res> {
   factory _$LineUpCopyWith(_LineUp value, $Res Function(_LineUp) _then) = __$LineUpCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String title, String date, String? worshipLeader, int songsCount, int version
+ int id, String title, String date, String? worshipLeader, int songsCount, int version, DateTime? updatedAt, UserBrief? updatedBy
 });
 
 
-
+@override $UserBriefCopyWith<$Res>? get updatedBy;
 
 }
 /// @nodoc
@@ -284,7 +302,7 @@ class __$LineUpCopyWithImpl<$Res>
 
 /// Create a copy of LineUp
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? version = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? version = null,Object? updatedAt = freezed,Object? updatedBy = freezed,}) {
   return _then(_LineUp(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -292,11 +310,25 @@ as String,date: null == date ? _self.date : date // ignore: cast_nullable_to_non
 as String,worshipLeader: freezed == worshipLeader ? _self.worshipLeader : worshipLeader // ignore: cast_nullable_to_non_nullable
 as String?,songsCount: null == songsCount ? _self.songsCount : songsCount // ignore: cast_nullable_to_non_nullable
 as int,version: null == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
-as int,
+as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedBy: freezed == updatedBy ? _self.updatedBy : updatedBy // ignore: cast_nullable_to_non_nullable
+as UserBrief?,
   ));
 }
 
+/// Create a copy of LineUp
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<$Res>? get updatedBy {
+    if (_self.updatedBy == null) {
+    return null;
+  }
 
+  return $UserBriefCopyWith<$Res>(_self.updatedBy!, (value) {
+    return _then(_self.copyWith(updatedBy: value));
+  });
+}
 }
 
 
@@ -579,7 +611,7 @@ as List<LineUp>,
 /// @nodoc
 mixin _$LineUpDetail {
 
- int get id; String get title; String get date; String? get worshipLeader; int get songsCount; List<LineUpSongEntry> get songs; int get version;
+ int get id; String get title; String get date; String? get worshipLeader; int get songsCount; List<LineUpSongEntry> get songs; int get version; DateTime? get updatedAt; UserBrief? get updatedBy;
 /// Create a copy of LineUpDetail
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -593,20 +625,20 @@ $LineUpDetailCopyWith<LineUpDetail> get copyWith => _$LineUpDetailCopyWithImpl<L
 @override
 bool operator ==(Object other) {
   final _this = this as LineUpDetail;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LineUpDetail&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.date, _this.date) || other.date == _this.date)&&(identical(other.worshipLeader, _this.worshipLeader) || other.worshipLeader == _this.worshipLeader)&&(identical(other.songsCount, _this.songsCount) || other.songsCount == _this.songsCount)&&const DeepCollectionEquality().equals(other.songs, _this.songs)&&(identical(other.version, _this.version) || other.version == _this.version));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LineUpDetail&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.date, _this.date) || other.date == _this.date)&&(identical(other.worshipLeader, _this.worshipLeader) || other.worshipLeader == _this.worshipLeader)&&(identical(other.songsCount, _this.songsCount) || other.songsCount == _this.songsCount)&&const DeepCollectionEquality().equals(other.songs, _this.songs)&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.updatedBy, _this.updatedBy) || other.updatedBy == _this.updatedBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as LineUpDetail;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.date,_this.worshipLeader,_this.songsCount,const DeepCollectionEquality().hash(_this.songs),_this.version);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.date,_this.worshipLeader,_this.songsCount,const DeepCollectionEquality().hash(_this.songs),_this.version,_this.updatedAt,_this.updatedBy);
 }
 
 @override
 String toString() {
   final _this = this as LineUpDetail;
-  return 'LineUpDetail(id: ${_this.id}, title: ${_this.title}, date: ${_this.date}, worshipLeader: ${_this.worshipLeader}, songsCount: ${_this.songsCount}, songs: ${_this.songs}, version: ${_this.version})';
+  return 'LineUpDetail(id: ${_this.id}, title: ${_this.title}, date: ${_this.date}, worshipLeader: ${_this.worshipLeader}, songsCount: ${_this.songsCount}, songs: ${_this.songs}, version: ${_this.version}, updatedAt: ${_this.updatedAt}, updatedBy: ${_this.updatedBy})';
 }
 
 
@@ -617,11 +649,11 @@ abstract mixin class $LineUpDetailCopyWith<$Res>  {
   factory $LineUpDetailCopyWith(LineUpDetail value, $Res Function(LineUpDetail) _then) = _$LineUpDetailCopyWithImpl;
 @useResult
 $Res call({
- int id, String title, String date, String? worshipLeader, int songsCount, List<LineUpSongEntry> songs, int version
+ int id, String title, String date, String? worshipLeader, int songsCount, List<LineUpSongEntry> songs, int version, DateTime? updatedAt, UserBrief? updatedBy
 });
 
 
-
+$UserBriefCopyWith<$Res>? get updatedBy;
 
 }
 /// @nodoc
@@ -634,7 +666,7 @@ class _$LineUpDetailCopyWithImpl<$Res>
 
 /// Create a copy of LineUpDetail
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? songs = null,Object? version = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? songs = null,Object? version = null,Object? updatedAt = freezed,Object? updatedBy = freezed,}) {
   return _then(LineUpDetail(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -643,10 +675,24 @@ as String,worshipLeader: freezed == worshipLeader ? _self.worshipLeader : worshi
 as String?,songsCount: null == songsCount ? _self.songsCount : songsCount // ignore: cast_nullable_to_non_nullable
 as int,songs: null == songs ? _self.songs : songs // ignore: cast_nullable_to_non_nullable
 as List<LineUpSongEntry>,version: null == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
-as int,
+as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedBy: freezed == updatedBy ? _self.updatedBy : updatedBy // ignore: cast_nullable_to_non_nullable
+as UserBrief?,
   ));
 }
+/// Create a copy of LineUpDetail
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<$Res>? get updatedBy {
+    if (_self.updatedBy == null) {
+    return null;
+  }
 
+  return $UserBriefCopyWith<$Res>(_self.updatedBy!, (value) {
+    return _then(_self.copyWith(updatedBy: value));
+  });
+}
 }
 
 
@@ -728,10 +774,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  List<LineUpSongEntry> songs,  int version)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  List<LineUpSongEntry> songs,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LineUpDetail() when $default != null:
-return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.songs,_that.version);case _:
+return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.songs,_that.version,_that.updatedAt,_that.updatedBy);case _:
   return orElse();
 
 }
@@ -749,10 +795,10 @@ return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsC
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  List<LineUpSongEntry> songs,  int version)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  List<LineUpSongEntry> songs,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)  $default,) {final _that = this;
 switch (_that) {
 case _LineUpDetail():
-return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.songs,_that.version);case _:
+return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.songs,_that.version,_that.updatedAt,_that.updatedBy);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -769,10 +815,10 @@ return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsC
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  List<LineUpSongEntry> songs,  int version)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String title,  String date,  String? worshipLeader,  int songsCount,  List<LineUpSongEntry> songs,  int version,  DateTime? updatedAt,  UserBrief? updatedBy)?  $default,) {final _that = this;
 switch (_that) {
 case _LineUpDetail() when $default != null:
-return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.songs,_that.version);case _:
+return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsCount,_that.songs,_that.version,_that.updatedAt,_that.updatedBy);case _:
   return null;
 
 }
@@ -784,7 +830,7 @@ return $default(_that.id,_that.title,_that.date,_that.worshipLeader,_that.songsC
 @JsonSerializable()
 
 class _LineUpDetail extends LineUpDetail {
-  const _LineUpDetail({required this.id, required this.title, required this.date, this.worshipLeader, this.songsCount = 0,  List<LineUpSongEntry> songs = const <LineUpSongEntry>[], this.version = 1}): _songs = songs,super._();
+  const _LineUpDetail({required this.id, required this.title, required this.date, this.worshipLeader, this.songsCount = 0,  List<LineUpSongEntry> songs = const <LineUpSongEntry>[], this.version = 1, this.updatedAt, this.updatedBy}): _songs = songs,super._();
   factory _LineUpDetail.fromJson(Map<String, dynamic> json) => _$LineUpDetailFromJson(json);
 
 @override final  int id;
@@ -800,6 +846,8 @@ class _LineUpDetail extends LineUpDetail {
 }
 
 @override@JsonKey() final  int version;
+@override final  DateTime? updatedAt;
+@override final  UserBrief? updatedBy;
 
 /// Create a copy of LineUpDetail
 /// with the given fields replaced by the non-null parameter values.
@@ -814,18 +862,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LineUpDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.date, date) || other.date == date)&&(identical(other.worshipLeader, worshipLeader) || other.worshipLeader == worshipLeader)&&(identical(other.songsCount, songsCount) || other.songsCount == songsCount)&&const DeepCollectionEquality().equals(other.songs, _songs)&&(identical(other.version, version) || other.version == version));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LineUpDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.date, date) || other.date == date)&&(identical(other.worshipLeader, worshipLeader) || other.worshipLeader == worshipLeader)&&(identical(other.songsCount, songsCount) || other.songsCount == songsCount)&&const DeepCollectionEquality().equals(other.songs, _songs)&&(identical(other.version, version) || other.version == version)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.updatedBy, updatedBy) || other.updatedBy == updatedBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,date,worshipLeader,songsCount,const DeepCollectionEquality().hash(_songs),version);
+    return Object.hash(runtimeType,id,title,date,worshipLeader,songsCount,const DeepCollectionEquality().hash(_songs),version,updatedAt,updatedBy);
 }
 
 @override
 String toString() {
-    return 'LineUpDetail(id: $id, title: $title, date: $date, worshipLeader: $worshipLeader, songsCount: $songsCount, songs: $songs, version: $version)';
+    return 'LineUpDetail(id: $id, title: $title, date: $date, worshipLeader: $worshipLeader, songsCount: $songsCount, songs: $songs, version: $version, updatedAt: $updatedAt, updatedBy: $updatedBy)';
 }
 
 
@@ -836,11 +884,11 @@ abstract mixin class _$LineUpDetailCopyWith<$Res> implements $LineUpDetailCopyWi
   factory _$LineUpDetailCopyWith(_LineUpDetail value, $Res Function(_LineUpDetail) _then) = __$LineUpDetailCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String title, String date, String? worshipLeader, int songsCount, List<LineUpSongEntry> songs, int version
+ int id, String title, String date, String? worshipLeader, int songsCount, List<LineUpSongEntry> songs, int version, DateTime? updatedAt, UserBrief? updatedBy
 });
 
 
-
+@override $UserBriefCopyWith<$Res>? get updatedBy;
 
 }
 /// @nodoc
@@ -853,7 +901,7 @@ class __$LineUpDetailCopyWithImpl<$Res>
 
 /// Create a copy of LineUpDetail
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? songs = null,Object? version = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? date = null,Object? worshipLeader = freezed,Object? songsCount = null,Object? songs = null,Object? version = null,Object? updatedAt = freezed,Object? updatedBy = freezed,}) {
   return _then(_LineUpDetail(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -862,11 +910,25 @@ as String,worshipLeader: freezed == worshipLeader ? _self.worshipLeader : worshi
 as String?,songsCount: null == songsCount ? _self.songsCount : songsCount // ignore: cast_nullable_to_non_nullable
 as int,songs: null == songs ? _self._songs : songs // ignore: cast_nullable_to_non_nullable
 as List<LineUpSongEntry>,version: null == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
-as int,
+as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedBy: freezed == updatedBy ? _self.updatedBy : updatedBy // ignore: cast_nullable_to_non_nullable
+as UserBrief?,
   ));
 }
 
+/// Create a copy of LineUpDetail
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserBriefCopyWith<$Res>? get updatedBy {
+    if (_self.updatedBy == null) {
+    return null;
+  }
 
+  return $UserBriefCopyWith<$Res>(_self.updatedBy!, (value) {
+    return _then(_self.copyWith(updatedBy: value));
+  });
+}
 }
 
 

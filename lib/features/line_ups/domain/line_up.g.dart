@@ -13,6 +13,12 @@ _LineUp _$LineUpFromJson(Map<String, dynamic> json) => _LineUp(
   worshipLeader: json['worship_leader'] as String?,
   songsCount: (json['songs_count'] as num?)?.toInt() ?? 0,
   version: (json['version'] as num?)?.toInt() ?? 1,
+  updatedAt: json['updated_at'] == null
+      ? null
+      : DateTime.parse(json['updated_at'] as String),
+  updatedBy: json['updated_by'] == null
+      ? null
+      : UserBrief.fromJson(json['updated_by'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$LineUpToJson(_LineUp instance) => <String, dynamic>{
@@ -22,6 +28,8 @@ Map<String, dynamic> _$LineUpToJson(_LineUp instance) => <String, dynamic>{
   'worship_leader': instance.worshipLeader,
   'songs_count': instance.songsCount,
   'version': instance.version,
+  'updated_at': instance.updatedAt?.toIso8601String(),
+  'updated_by': instance.updatedBy?.toJson(),
 };
 
 _LineUpListPage _$LineUpListPageFromJson(Map<String, dynamic> json) =>
@@ -49,6 +57,12 @@ _LineUpDetail _$LineUpDetailFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const <LineUpSongEntry>[],
       version: (json['version'] as num?)?.toInt() ?? 1,
+      updatedAt: json['updated_at'] == null
+          ? null
+          : DateTime.parse(json['updated_at'] as String),
+      updatedBy: json['updated_by'] == null
+          ? null
+          : UserBrief.fromJson(json['updated_by'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$LineUpDetailToJson(_LineUpDetail instance) =>
@@ -60,6 +74,8 @@ Map<String, dynamic> _$LineUpDetailToJson(_LineUpDetail instance) =>
       'songs_count': instance.songsCount,
       'songs': instance.songs.map((e) => e.toJson()).toList(),
       'version': instance.version,
+      'updated_at': instance.updatedAt?.toIso8601String(),
+      'updated_by': instance.updatedBy?.toJson(),
     };
 
 _LineUpSongEntry _$LineUpSongEntryFromJson(Map<String, dynamic> json) =>

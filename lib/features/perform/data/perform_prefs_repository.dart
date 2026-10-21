@@ -19,6 +19,7 @@ class PerformPrefs {
     this.practiceClick = true,
     this.practiceHaptics = false,
     this.practiceFlash = true,
+    this.practiceCountIn = 1,
   });
 
   final PerformTheme theme;
@@ -40,7 +41,13 @@ class PerformPrefs {
   /// Practice: the playing bar pulses on the beat.
   final bool practiceFlash;
 
-  PerformPrefs copyWithPractice({bool? click, bool? haptics, bool? flash}) => PerformPrefs(
+  /// Practice: bars counted in before Play starts; 0 starts straight away.
+  final int practiceCountIn;
+
+  /// What [practiceCountIn] can be.
+  static const countInChoices = [0, 1, 2];
+
+  PerformPrefs copyWithPractice({bool? click, bool? haptics, bool? flash, int? countIn}) => PerformPrefs(
     theme: theme,
     autoHide: autoHide,
     notesVisible: notesVisible,
@@ -48,6 +55,7 @@ class PerformPrefs {
     practiceClick: click ?? practiceClick,
     practiceHaptics: haptics ?? practiceHaptics,
     practiceFlash: flash ?? practiceFlash,
+    practiceCountIn: countIn ?? practiceCountIn,
   );
 
   @override
@@ -59,11 +67,20 @@ class PerformPrefs {
       other.liveAutoReturn == liveAutoReturn &&
       other.practiceClick == practiceClick &&
       other.practiceHaptics == practiceHaptics &&
-      other.practiceFlash == practiceFlash;
+      other.practiceFlash == practiceFlash &&
+      other.practiceCountIn == practiceCountIn;
 
   @override
-  int get hashCode =>
-      Object.hash(theme, autoHide, notesVisible, liveAutoReturn, practiceClick, practiceHaptics, practiceFlash);
+  int get hashCode => Object.hash(
+    theme,
+    autoHide,
+    notesVisible,
+    liveAutoReturn,
+    practiceClick,
+    practiceHaptics,
+    practiceFlash,
+    practiceCountIn,
+  );
 }
 
 /// Perform's columns of the one-row `DisplayPrefs` table.
@@ -83,6 +100,7 @@ class PerformPrefsRepository {
             practiceClick: row.practiceClick,
             practiceHaptics: row.practiceHaptics,
             practiceFlash: row.practiceFlash,
+            practiceCountIn: row.practiceCountIn,
           ),
   );
 
@@ -105,6 +123,8 @@ class PerformPrefsRepository {
   Future<void> setPracticeHaptics(bool on) => _write(DisplayPrefsCompanion(practiceHaptics: Value(on)));
 
   Future<void> setPracticeFlash(bool on) => _write(DisplayPrefsCompanion(practiceFlash: Value(on)));
+
+  Future<void> setPracticeCountIn(int bars) => _write(DisplayPrefsCompanion(practiceCountIn: Value(bars)));
 }
 
 @Riverpod(keepAlive: true)

@@ -23,15 +23,23 @@ final _separatorAtom = RegExp(r'^[./_-]+$');
 bool isSeparatorAtom(List<Segment> atom) =>
     atom.length == 1 && atom.first.kind == SegmentKind.text && _separatorAtom.hasMatch(atom.first.value);
 
-/// A bar's own rhythm, read from its separators: for each beat, the index of
-/// the atom sounding on it. A separator extends the chord before it, so
-/// `| C - G - |` in 4/4 is C for two beats, then G for two.
+/// A bar's own rhythm: for each beat, the index of the atom sounding on it.
+/// The length is the bar's beat count.
 ///
-/// The length is the bar's own beat count, which can be short of
-/// [beatsPerBar] (`| A . |` in 4/4 is a two-beat bar). Null — "no rhythm
-/// written" — when there are no separators, an atom carries no chord, or the
-/// beats add up to more than a bar; the whole bar is then one event.
-List<int>? barBeatMap(List<List<Segment>> atoms, int beatsPerBar) {
+/// Separators place the chords: one extends the chord before it, so
+/// `| C - G - |` in 4/4 is C for two beats, then G for two. The bar is as
+/// long as its beats add up to — `| A . |` in 4/4 is a two-beat bar, and
+/// `| F#m . Bm . . . |` a six-beat one.
+///
+/// With no separators, two or more chords split the bar evenly: `| G A |`
+/// is two beats each, and `| 2/4 Em F#m |` one each.
+///
+/// [meter] is the bar's own time signature (see [BarCell.meter]), which
+/// fixes its length; separators that don't add up to it are ignored.
+///
+/// Null — light the whole bar — for a single chord with no separators, an
+/// atom that carries no chord, or chords that don't divide the bar evenly.
+List<int>? barBeatMap(List<List<Segment>> atoms, int beatsPerBar, {int? meter}) {
   final map = <int>[];
   var hasSeparator = false;
   var current = -1;
@@ -52,8 +60,13 @@ List<int>? barBeatMap(List<List<Segment>> atoms, int beatsPerBar) {
     map.add(i);
   }
 
-  if (!hasSeparator || map.isEmpty || map.length > beatsPerBar) return null;
-  return map;
+  if (map.isEmpty) return null;
+  if (hasSeparator) return meter == null || map.length == meter ? map : null;
+
+  final beats = meter ?? beatsPerBar;
+  if (atoms.length < 2 || beats % atoms.length != 0) return null;
+  final each = beats ~/ atoms.length;
+  return [for (var i = 0; i < atoms.length; i++) ...List.filled(each, i)];
 }
 
 /// One bar of playing time, pointing back at where it is written.
@@ -66,9 +79,16 @@ class BarStep {
     required this.chords,
     required this.beatCount,
     this.beatMap,
+    this.cycle = 0,
+    this.pass = 0,
   });
 
   final String sectionId;
+
+  /// Which time round the section this is (`×2`), and which time round its
+  /// line — 0-based. The same written bar plays once per pass.
+  final int cycle;
+  final int pass;
 
   /// Line within the section's own lines (headers excluded).
   final int line;
@@ -79,8 +99,9 @@ class BarStep {
   /// What sounds, with `%` and empty bars resolved to the bar before.
   final List<String> chords;
 
-  /// Beats this bar takes: the song's count unless the bar wrote a shorter
-  /// rhythm. `%` and empty bars carry the last one, as [chords] do.
+  /// Beats this bar takes: the song's count unless the bar wrote its own
+  /// (a time signature, or separators that add up to more or less). `%` and
+  /// empty bars carry the last one, as [chords] do.
   final int beatCount;
 
   /// The bar's own rhythm (see [barBeatMap]), or null to light the whole bar.
@@ -93,6 +114,15 @@ class BarStep {
     return map[beat];
   }
 
+  /// The beat [atom] first sounds on; 0 for the whole bar.
+  int beatOf(int? atom) {
+    final at = atom == null ? -1 : beatMap?.indexOf(atom) ?? -1;
+    return at < 0 ? 0 : at;
+  }
+
+  /// The beat the chord sounding on [beat] came in on.
+  int chordStart(int beat) => beatOf(atomAt(beat));
+
   @override
   bool operator ==(Object other) =>
       other is BarStep &&
@@ -100,18 +130,22 @@ class BarStep {
       other.line == line &&
       other.bar == bar &&
       other.beatCount == beatCount &&
+      other.cycle == cycle &&
+      other.pass == pass &&
       listEquals(other.chords, chords) &&
       listEquals(other.beatMap, beatMap);
 
   @override
   int get hashCode =>
-      Object.hash(sectionId, line, bar, beatCount, Object.hashAll(chords), Object.hashAll(beatMap ?? []));
+      Object.hash(sectionId, line, bar, beatCount, cycle, pass, Object.hashAll(chords), Object.hashAll(beatMap ?? []));
 
   @override
   String toString() => 'BarStep($sectionId L$line B$bar ${chords.join(' ')} /$beatCount)';
 }
 
-typedef _Unit = ({List<String> chords, List<int>? beatMap, int beatCount});
+/// [beatCount] null carries the bar before's. [holds] keeps sounding the
+/// last chord written: a bar of only separators (`| . . |`).
+typedef _Unit = ({List<String> chords, List<int>? beatMap, int? beatCount, bool holds});
 
 /// The bars a line contributes, or null for lyrics, notes and headers.
 ({List<_Unit> units, int repeat})? _unitsFor(String line, int beatsPerBar) {
@@ -121,16 +155,20 @@ typedef _Unit = ({List<String> chords, List<int>? beatMap, int beatCount});
         units: [
           for (final bar in bars)
             () {
-              final map = barBeatMap(bar.atoms, beatsPerBar);
-              return (
-                chords: [
-                  for (final atom in bar.atoms)
-                    for (final s in atom)
-                      if (s.kind == SegmentKind.chord) s.value,
-                ],
-                beatMap: map,
-                beatCount: map?.length ?? beatsPerBar,
-              );
+              final meter = bar.meter?.count;
+              final map = barBeatMap(bar.atoms, beatsPerBar, meter: meter);
+              final chords = [
+                for (final atom in bar.atoms)
+                  for (final s in atom)
+                    if (s.kind == SegmentKind.chord) s.value,
+              ];
+              if (chords.isEmpty) {
+                // `%`, an empty bar, or a bar of beats held over (`| . . |`):
+                // it sounds as before, lit whole, for as long as it says.
+                final held = !bar.simile && map != null;
+                return (chords: chords, beatMap: null, beatCount: meter ?? (held ? map.length : null), holds: held);
+              }
+              return (chords: chords, beatMap: map, beatCount: meter ?? map?.length ?? beatsPerBar, holds: false);
             }(),
         ],
         repeat: repeat,
@@ -140,7 +178,7 @@ typedef _Unit = ({List<String> chords, List<int>? beatMap, int beatCount});
     case ChordsLine(:final chords, :final repeat) when chords.isNotEmpty:
       return (
         units: [
-          for (final c in chords) (chords: [c], beatMap: null, beatCount: beatsPerBar),
+          for (final c in chords) (chords: [c], beatMap: null, beatCount: beatsPerBar, holds: false),
         ],
         repeat: repeat,
       );
@@ -167,8 +205,10 @@ List<BarStep> songBarTimeline(List<PerformSection> sections, int beatsPerBar) {
           for (final (bar, unit) in line.units.indexed) {
             if (unit.chords.isNotEmpty) {
               chords = unit.chords;
-              beatCount = unit.beatCount;
+            } else if (unit.holds && chords.isNotEmpty) {
+              chords = [chords.last];
             }
+            beatCount = unit.beatCount ?? beatCount;
             steps.add(
               BarStep(
                 sectionId: section.id,
@@ -177,6 +217,8 @@ List<BarStep> songBarTimeline(List<PerformSection> sections, int beatsPerBar) {
                 chords: chords,
                 beatCount: beatCount,
                 beatMap: unit.beatMap,
+                cycle: cycle,
+                pass: pass,
               ),
             );
           }
@@ -196,4 +238,23 @@ Map<String, ({int start, int count})> sectionRuns(List<BarStep> steps) {
     runs[step.sectionId] = run == null ? (start: i, count: 1) : (start: run.start, count: run.count + 1);
   }
   return runs;
+}
+
+/// The step that plays the written bar [line]/[bar] of [sectionId]. A
+/// repeated bar plays more than once; [near] (where the clock is) picks the
+/// time round: its section's cycle and, on its own line, its pass — else the
+/// first. Null when the bar isn't played (not in the timeline).
+int? stepForBar(List<BarStep> steps, {required String sectionId, required int line, required int bar, int? near}) {
+  final at = near != null && near >= 0 && near < steps.length ? steps[near] : null;
+  final here = at?.sectionId == sectionId ? at : null;
+  int? first;
+  int? sameCycle;
+  for (final (i, step) in steps.indexed) {
+    if (step.sectionId != sectionId || step.line != line || step.bar != bar) continue;
+    first ??= i;
+    if (here == null || step.cycle != here.cycle) continue;
+    sameCycle ??= i;
+    if (here.line == line && step.pass == here.pass) return i;
+  }
+  return sameCycle ?? first;
 }

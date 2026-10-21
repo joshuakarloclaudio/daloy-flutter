@@ -169,7 +169,7 @@ void main() {
     expect(find.text('Choose a song'), findsNothing);
     expect(find.byType(SongDetailScreen), findsOneWidget);
     // In the pane: no back button.
-    expect(find.byTooltip('Back'), findsNothing);
+    expect(find.bySemanticsLabel('Back'), findsNothing);
     expect(tester.takeException(), isNull);
 
     tester.view.physicalSize = const Size(834, 1194);

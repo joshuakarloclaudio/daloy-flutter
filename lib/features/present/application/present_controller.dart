@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/connectivity/online_status.dart';
 import '../../../core/prefs/device_prefs.dart';
+import '../../auth/application/session_controller.dart';
 import '../../line_ups/application/line_up_detail_controller.dart';
 import '../../perform/application/perform_controller.dart' show LineUpSource, PerformSource, SongSource;
 import '../../songs/application/song_detail_controller.dart';
@@ -164,14 +166,14 @@ class PresentDeckController extends _$PresentDeckController {
       case PresentSetLook(:final look):
         ref.read(presentLookControllerProvider.notifier).set(look);
       case PresentEditSection():
-        _saveSection(command);
+        unawaited(_saveSection(command));
     }
   }
 
   /// Writes the section into the song on this device (or the first lyrics
   /// into a song without any); Drift's update rebuilds the slides, which
-  /// reach the screen and every remote.
-  void _saveSection(PresentEditSection edit) {
+  /// reach the screen and every remote. Then sends it to the server.
+  Future<void> _saveSection(PresentEditSection edit) async {
     if (edit.songIndex < 0 || edit.songIndex >= _songs.length) return;
     final song = _songs[edit.songIndex];
     final songId = song.songId;
@@ -181,6 +183,10 @@ class PresentDeckController extends _$PresentDeckController {
         ? (edit.sectionId == blankSectionId(song.key) ? edit.lines.join('\n').trim() : null)
         : replaceSection(song.lyrics!, song.key, edit.sectionId, label: edit.label, lines: edit.lines);
     if (lyrics == null || lyrics.isEmpty || lyrics == song.lyrics) return;
-    unawaited(ref.read(songDetailRepositoryProvider).setLyrics(songId, lyrics));
+    final repo = ref.read(songDetailRepositoryProvider);
+    await repo.setLyrics(songId, lyrics);
+    if (!ref.mounted) return;
+    final workspaceId = ref.read(activeWorkspaceIdProvider);
+    if (workspaceId != null && ref.read(isOnlineProvider)) unawaited(repo.flush(workspaceId));
   }
 }

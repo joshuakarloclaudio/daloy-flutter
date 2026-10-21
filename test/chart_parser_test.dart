@@ -130,6 +130,23 @@ void main() {
       expect(line.bars[1].atoms.length, 1);
     });
 
+    test("a time signature in a bar is that bar's, and only on a bar line", () {
+      final line = classifyLine('| 2/4 [Em] [F#m] | [G] . [A] . |') as BarChartLine;
+      expect(line.bars[0].meter?.value, '2/4');
+      expect(line.bars[0].meter?.count, 2);
+      expect(line.bars[0].atoms.length, 2, reason: 'the signature is not an atom');
+      expect(line.bars[1].meter, isNull);
+
+      final before = classifyLine('2/4 | [Em] [F#m] | [G] |') as BarChartLine;
+      expect(before.bars.length, 2);
+      expect(before.bars[0].meter?.count, 2);
+
+      expect(classifyLine('[G]Sing 2/4 time'), isA<TextLine>());
+      expect(classifyLine('2/4 [Em] [F#m]'), isA<TextLine>());
+      expect(parseMeterToken('3/5'), isNull);
+      expect(parseMeterToken('6/8'), 6);
+    });
+
     test('a pipe or x2 inside lyrics is not structure', () {
       expect(classifyLine('Sing | it out x2 loud'), isA<TextLine>());
       expect(classifyLine('[G]Sing it | [C]loud'), isA<TextLine>());

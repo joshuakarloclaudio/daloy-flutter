@@ -145,7 +145,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(LineUpDetailScreen), findsOneWidget);
     expect(find.byType(SplitView), findsOneWidget);
-    expect(find.byTooltip('Back'), findsNothing);
+    expect(find.bySemanticsLabel('Back'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

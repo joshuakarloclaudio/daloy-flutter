@@ -29,6 +29,9 @@ enum PieceKind {
   /// `x2` / `2x` on a bar or section line: drawn as written, styled as a badge.
   repeat,
 
+  /// `2/4` on a bar line — that bar's time signature, drawn as a badge.
+  meter,
+
   /// A drawn space between two touching chords (`[G][D]`); no source text.
   pad,
 }
@@ -82,6 +85,7 @@ class EditorLine {
     // lyric stays text.
     final structured = parseLine(line)
         .any((seg) => seg.kind == SegmentKind.bar || seg.kind == SegmentKind.simile || seg.kind == SegmentKind.repeat);
+    final metered = structured && parseLine(line).any((seg) => seg.kind == SegmentKind.meter);
 
     void addText(int start, int end) {
       final text = line.substring(start, end);
@@ -92,6 +96,8 @@ class EditorLine {
             ? PieceKind.bar
             : parseRepeatToken(word) != null
             ? PieceKind.repeat
+            : metered && parseMeterToken(word) != null
+            ? PieceKind.meter
             : PieceKind.text;
         add(kind, start + part.start, start + part.end, word);
       }

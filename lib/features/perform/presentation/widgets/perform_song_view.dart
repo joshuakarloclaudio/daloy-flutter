@@ -23,7 +23,13 @@ const performTwoColumnWidth = 900.0;
 /// playing), whether to flash it, and the loop.
 @immutable
 class PracticeChartClock {
-  const PracticeChartClock({required this.beat, required this.flash, required this.onLoop, this.loop});
+  const PracticeChartClock({
+    required this.beat,
+    required this.flash,
+    required this.onLoop,
+    required this.onSeekBar,
+    this.loop,
+  });
 
   final ValueListenable<PracticeBeat?> beat;
   final bool flash;
@@ -31,6 +37,9 @@ class PracticeChartClock {
 
   /// Long-press on a section: loop it (again: stop).
   final void Function(int song, String sectionId) onLoop;
+
+  /// A bar or chord tapped: start there (at once, playing).
+  final void Function(int song, String sectionId, {required int line, required int bar, int? atom}) onSeekBar;
 }
 
 /// One song of the set: its heading, then its sections in the order this
@@ -382,6 +391,16 @@ extension on PerformSectionBlock {
     lineOffset: section.startLine,
     highlight: highlight,
     highlightColor: color,
+    onBarTap: switch (practice) {
+      final practice? => (line, bar, atom) => practice.onSeekBar(
+        songIndex,
+        section.id,
+        line: line,
+        bar: bar,
+        atom: atom,
+      ),
+      null => null,
+    },
   );
 
   /// The bar to light in this section, if the clock is in it.
@@ -392,7 +411,7 @@ extension on PerformSectionBlock {
     return ChartBarHighlight(
       line: step.line,
       bar: step.bar,
-      atom: waiting ? null : b.atom,
+      atom: b.atom,
       pending: waiting,
       pulse: flash && !waiting ? b.serial : null,
     );

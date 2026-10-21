@@ -20,6 +20,8 @@ import '../../../shared/widgets/mode_button.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/staggered_entrance.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../../shared/widgets/updated_footnote.dart';
+import '../../auth/application/session_controller.dart';
 import '../../live/presentation/go_live_dialog.dart';
 import '../../songs/presentation/song_actions.dart' show editSongChords, editSongLyrics;
 import '../../sync/realtime_scope.dart';
@@ -147,8 +149,17 @@ class _LineUpDetailScreenState extends ConsumerState<LineUpDetailScreen> {
                 showDaloyToast(ScaffoldMessenger.of(context), 'Add YouTube links to these songs to listen.');
               },
       );
+      final by = lineUp.updatedBy;
       final setlist = _SetlistSliver(
         state: state,
+        // Edits still on their way: the server's "last updated" is behind.
+        footnote: state.hasPendingChanges || lineUp.updatedAt == null
+            ? null
+            : UpdatedFootnote(
+                at: lineUp.updatedAt,
+                byName: by?.name,
+                isMe: by != null && by.id == ref.watch(sessionControllerProvider).value?.user.id,
+              ),
         onOpen: _openSong,
         menu: _songMenuItems,
         onAddSongs: () => context.push(Routes.lineUpEdit(lineUp.id)),
@@ -505,9 +516,18 @@ class _SyncNote extends StatelessWidget {
 // -- Setlist ---------------------------------------------------------------------
 
 class _SetlistSliver extends StatelessWidget {
-  const _SetlistSliver({required this.state, required this.onOpen, required this.menu, required this.onAddSongs});
+  const _SetlistSliver({
+    required this.state,
+    required this.onOpen,
+    required this.menu,
+    required this.onAddSongs,
+    this.footnote,
+  });
 
   final LineUpDetailState state;
+
+  /// Under the set: when it last changed, and who changed it.
+  final Widget? footnote;
   final ValueChanged<SetlistSong> onOpen;
   final List<DaloyMenuItem> Function(SetlistSong song) menu;
   final VoidCallback onAddSongs;
@@ -519,6 +539,12 @@ class _SetlistSliver extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(DaloySpace.s2, DaloySpace.s6, 0, DaloySpace.s2),
       child: const SectionLabel('Setlist'),
     );
+    final footer = footnote == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(top: DaloySpace.s8),
+            child: footnote,
+          );
 
     if (songs.isEmpty) {
       return SliverToBoxAdapter(
@@ -543,15 +569,17 @@ class _SetlistSliver extends StatelessWidget {
                       action: DaloyButton(label: 'Add songs', icon: TablerIcons.plus, onPressed: onAddSongs),
                     ),
             ),
+            ?footer,
           ],
         ),
       );
     }
 
     return SliverList.builder(
-      itemCount: songs.length + 1,
+      itemCount: songs.length + (footer == null ? 1 : 2),
       itemBuilder: (context, i) {
         if (i == 0) return header;
+        if (i > songs.length) return footer;
         final song = songs[i - 1];
         return SetlistRow(
           key: ValueKey(song.position),

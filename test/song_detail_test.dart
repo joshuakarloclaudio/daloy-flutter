@@ -312,7 +312,7 @@ void main() {
 
     testWidgets('the display sheet offers notation and size, not the view mode', (tester) async {
       await pump(tester);
-      await tester.tap(find.byTooltip('Display'));
+      await tester.tap(find.bySemanticsLabel('Display'));
       await tester.pumpAndSettle();
 
       expect(find.text('CHORDS AS'), findsOneWidget);

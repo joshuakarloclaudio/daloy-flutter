@@ -199,6 +199,39 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, SongRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByIdMeta = const VerificationMeta(
+    'updatedById',
+  );
+  @override
+  late final GeneratedColumn<int> updatedById = GeneratedColumn<int>(
+    'updated_by_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByNameMeta = const VerificationMeta(
+    'updatedByName',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByName = GeneratedColumn<String>(
+    'updated_by_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -219,6 +252,9 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, SongRow> {
     createdAt,
     lastUsedAt,
     version,
+    updatedAt,
+    updatedById,
+    updatedByName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -356,6 +392,30 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, SongRow> {
         version.isAcceptableOrUnknown(data['version']!, _versionMeta),
       );
     }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('updated_by_id')) {
+      context.handle(
+        _updatedByIdMeta,
+        updatedById.isAcceptableOrUnknown(
+          data['updated_by_id']!,
+          _updatedByIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_by_name')) {
+      context.handle(
+        _updatedByNameMeta,
+        updatedByName.isAcceptableOrUnknown(
+          data['updated_by_name']!,
+          _updatedByNameMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -437,6 +497,18 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, SongRow> {
         DriftSqlType.int,
         data['${effectivePrefix}version'],
       )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
+      updatedById: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_by_id'],
+      ),
+      updatedByName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_name'],
+      ),
     );
   }
 
@@ -470,6 +542,12 @@ class SongRow extends DataClass implements Insertable<SongRow> {
   /// The server's version of this copy; a realtime ping with a higher one
   /// means it's out of date.
   final int version;
+
+  /// The server's last shared change: when, and who ([updatedById] and
+  /// [updatedByName] both null when it doesn't know).
+  final DateTime? updatedAt;
+  final int? updatedById;
+  final String? updatedByName;
   const SongRow({
     required this.id,
     required this.workspaceId,
@@ -489,6 +567,9 @@ class SongRow extends DataClass implements Insertable<SongRow> {
     this.createdAt,
     this.lastUsedAt,
     required this.version,
+    this.updatedAt,
+    this.updatedById,
+    this.updatedByName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -537,6 +618,15 @@ class SongRow extends DataClass implements Insertable<SongRow> {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt);
     }
     map['version'] = Variable<int>(version);
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || updatedById != null) {
+      map['updated_by_id'] = Variable<int>(updatedById);
+    }
+    if (!nullToAbsent || updatedByName != null) {
+      map['updated_by_name'] = Variable<String>(updatedByName);
+    }
     return map;
   }
 
@@ -582,6 +672,15 @@ class SongRow extends DataClass implements Insertable<SongRow> {
           ? const Value.absent()
           : Value(lastUsedAt),
       version: Value(version),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      updatedById: updatedById == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedById),
+      updatedByName: updatedByName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedByName),
     );
   }
 
@@ -609,6 +708,9 @@ class SongRow extends DataClass implements Insertable<SongRow> {
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
       version: serializer.fromJson<int>(json['version']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      updatedById: serializer.fromJson<int?>(json['updatedById']),
+      updatedByName: serializer.fromJson<String?>(json['updatedByName']),
     );
   }
   @override
@@ -633,6 +735,9 @@ class SongRow extends DataClass implements Insertable<SongRow> {
       'createdAt': serializer.toJson<DateTime?>(createdAt),
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
       'version': serializer.toJson<int>(version),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'updatedById': serializer.toJson<int?>(updatedById),
+      'updatedByName': serializer.toJson<String?>(updatedByName),
     };
   }
 
@@ -655,6 +760,9 @@ class SongRow extends DataClass implements Insertable<SongRow> {
     Value<DateTime?> createdAt = const Value.absent(),
     Value<DateTime?> lastUsedAt = const Value.absent(),
     int? version,
+    Value<DateTime?> updatedAt = const Value.absent(),
+    Value<int?> updatedById = const Value.absent(),
+    Value<String?> updatedByName = const Value.absent(),
   }) => SongRow(
     id: id ?? this.id,
     workspaceId: workspaceId ?? this.workspaceId,
@@ -680,6 +788,11 @@ class SongRow extends DataClass implements Insertable<SongRow> {
     createdAt: createdAt.present ? createdAt.value : this.createdAt,
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
     version: version ?? this.version,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    updatedById: updatedById.present ? updatedById.value : this.updatedById,
+    updatedByName: updatedByName.present
+        ? updatedByName.value
+        : this.updatedByName,
   );
   SongRow copyWithCompanion(SongsCompanion data) {
     return SongRow(
@@ -715,6 +828,13 @@ class SongRow extends DataClass implements Insertable<SongRow> {
           ? data.lastUsedAt.value
           : this.lastUsedAt,
       version: data.version.present ? data.version.value : this.version,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      updatedById: data.updatedById.present
+          ? data.updatedById.value
+          : this.updatedById,
+      updatedByName: data.updatedByName.present
+          ? data.updatedByName.value
+          : this.updatedByName,
     );
   }
 
@@ -738,13 +858,16 @@ class SongRow extends DataClass implements Insertable<SongRow> {
           ..write('isPublic: $isPublic, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastUsedAt: $lastUsedAt, ')
-          ..write('version: $version')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('updatedById: $updatedById, ')
+          ..write('updatedByName: $updatedByName')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     workspaceId,
     title,
@@ -763,7 +886,10 @@ class SongRow extends DataClass implements Insertable<SongRow> {
     createdAt,
     lastUsedAt,
     version,
-  );
+    updatedAt,
+    updatedById,
+    updatedByName,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -785,7 +911,10 @@ class SongRow extends DataClass implements Insertable<SongRow> {
           other.isPublic == this.isPublic &&
           other.createdAt == this.createdAt &&
           other.lastUsedAt == this.lastUsedAt &&
-          other.version == this.version);
+          other.version == this.version &&
+          other.updatedAt == this.updatedAt &&
+          other.updatedById == this.updatedById &&
+          other.updatedByName == this.updatedByName);
 }
 
 class SongsCompanion extends UpdateCompanion<SongRow> {
@@ -807,6 +936,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
   final Value<DateTime?> createdAt;
   final Value<DateTime?> lastUsedAt;
   final Value<int> version;
+  final Value<DateTime?> updatedAt;
+  final Value<int?> updatedById;
+  final Value<String?> updatedByName;
   const SongsCompanion({
     this.id = const Value.absent(),
     this.workspaceId = const Value.absent(),
@@ -826,6 +958,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
     this.createdAt = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.version = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.updatedById = const Value.absent(),
+    this.updatedByName = const Value.absent(),
   });
   SongsCompanion.insert({
     this.id = const Value.absent(),
@@ -846,6 +981,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
     this.createdAt = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.version = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.updatedById = const Value.absent(),
+    this.updatedByName = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        title = Value(title);
   static Insertable<SongRow> custom({
@@ -867,6 +1005,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastUsedAt,
     Expression<int>? version,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? updatedById,
+    Expression<String>? updatedByName,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -887,6 +1028,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (version != null) 'version': version,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (updatedById != null) 'updated_by_id': updatedById,
+      if (updatedByName != null) 'updated_by_name': updatedByName,
     });
   }
 
@@ -909,6 +1053,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
     Value<DateTime?>? createdAt,
     Value<DateTime?>? lastUsedAt,
     Value<int>? version,
+    Value<DateTime?>? updatedAt,
+    Value<int?>? updatedById,
+    Value<String?>? updatedByName,
   }) {
     return SongsCompanion(
       id: id ?? this.id,
@@ -929,6 +1076,9 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
       createdAt: createdAt ?? this.createdAt,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       version: version ?? this.version,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedById: updatedById ?? this.updatedById,
+      updatedByName: updatedByName ?? this.updatedByName,
     );
   }
 
@@ -989,6 +1139,15 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
     if (version.present) {
       map['version'] = Variable<int>(version.value);
     }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (updatedById.present) {
+      map['updated_by_id'] = Variable<int>(updatedById.value);
+    }
+    if (updatedByName.present) {
+      map['updated_by_name'] = Variable<String>(updatedByName.value);
+    }
     return map;
   }
 
@@ -1012,7 +1171,10 @@ class SongsCompanion extends UpdateCompanion<SongRow> {
           ..write('isPublic: $isPublic, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastUsedAt: $lastUsedAt, ')
-          ..write('version: $version')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('updatedById: $updatedById, ')
+          ..write('updatedByName: $updatedByName')
           ..write(')'))
         .toString();
   }
@@ -2445,6 +2607,18 @@ class $DisplayPrefsTable extends DisplayPrefs
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _practiceCountInMeta = const VerificationMeta(
+    'practiceCountIn',
+  );
+  @override
+  late final GeneratedColumn<int> practiceCountIn = GeneratedColumn<int>(
+    'practice_count_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2458,6 +2632,7 @@ class $DisplayPrefsTable extends DisplayPrefs
     practiceClick,
     practiceHaptics,
     practiceFlash,
+    practiceCountIn,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2558,6 +2733,15 @@ class $DisplayPrefsTable extends DisplayPrefs
         ),
       );
     }
+    if (data.containsKey('practice_count_in')) {
+      context.handle(
+        _practiceCountInMeta,
+        practiceCountIn.isAcceptableOrUnknown(
+          data['practice_count_in']!,
+          _practiceCountInMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2611,6 +2795,10 @@ class $DisplayPrefsTable extends DisplayPrefs
         DriftSqlType.bool,
         data['${effectivePrefix}practice_flash'],
       )!,
+      practiceCountIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}practice_count_in'],
+      )!,
     );
   }
 
@@ -2653,6 +2841,9 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
 
   /// Practice: the playing bar pulses on the beat.
   final bool practiceFlash;
+
+  /// Practice: bars counted in before Play starts (0: straight in).
+  final int practiceCountIn;
   const DisplayPrefsRow({
     required this.id,
     required this.viewMode,
@@ -2665,6 +2856,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
     required this.practiceClick,
     required this.practiceHaptics,
     required this.practiceFlash,
+    required this.practiceCountIn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2684,6 +2876,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
     map['practice_click'] = Variable<bool>(practiceClick);
     map['practice_haptics'] = Variable<bool>(practiceHaptics);
     map['practice_flash'] = Variable<bool>(practiceFlash);
+    map['practice_count_in'] = Variable<int>(practiceCountIn);
     return map;
   }
 
@@ -2704,6 +2897,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
       practiceClick: Value(practiceClick),
       practiceHaptics: Value(practiceHaptics),
       practiceFlash: Value(practiceFlash),
+      practiceCountIn: Value(practiceCountIn),
     );
   }
 
@@ -2724,6 +2918,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
       practiceClick: serializer.fromJson<bool>(json['practiceClick']),
       practiceHaptics: serializer.fromJson<bool>(json['practiceHaptics']),
       practiceFlash: serializer.fromJson<bool>(json['practiceFlash']),
+      practiceCountIn: serializer.fromJson<int>(json['practiceCountIn']),
     );
   }
   @override
@@ -2741,6 +2936,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
       'practiceClick': serializer.toJson<bool>(practiceClick),
       'practiceHaptics': serializer.toJson<bool>(practiceHaptics),
       'practiceFlash': serializer.toJson<bool>(practiceFlash),
+      'practiceCountIn': serializer.toJson<int>(practiceCountIn),
     };
   }
 
@@ -2756,6 +2952,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
     bool? practiceClick,
     bool? practiceHaptics,
     bool? practiceFlash,
+    int? practiceCountIn,
   }) => DisplayPrefsRow(
     id: id ?? this.id,
     viewMode: viewMode ?? this.viewMode,
@@ -2770,6 +2967,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
     practiceClick: practiceClick ?? this.practiceClick,
     practiceHaptics: practiceHaptics ?? this.practiceHaptics,
     practiceFlash: practiceFlash ?? this.practiceFlash,
+    practiceCountIn: practiceCountIn ?? this.practiceCountIn,
   );
   DisplayPrefsRow copyWithCompanion(DisplayPrefsCompanion data) {
     return DisplayPrefsRow(
@@ -2800,6 +2998,9 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
       practiceFlash: data.practiceFlash.present
           ? data.practiceFlash.value
           : this.practiceFlash,
+      practiceCountIn: data.practiceCountIn.present
+          ? data.practiceCountIn.value
+          : this.practiceCountIn,
     );
   }
 
@@ -2816,7 +3017,8 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
           ..write('liveAutoReturn: $liveAutoReturn, ')
           ..write('practiceClick: $practiceClick, ')
           ..write('practiceHaptics: $practiceHaptics, ')
-          ..write('practiceFlash: $practiceFlash')
+          ..write('practiceFlash: $practiceFlash, ')
+          ..write('practiceCountIn: $practiceCountIn')
           ..write(')'))
         .toString();
   }
@@ -2834,6 +3036,7 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
     practiceClick,
     practiceHaptics,
     practiceFlash,
+    practiceCountIn,
   );
   @override
   bool operator ==(Object other) =>
@@ -2849,7 +3052,8 @@ class DisplayPrefsRow extends DataClass implements Insertable<DisplayPrefsRow> {
           other.liveAutoReturn == this.liveAutoReturn &&
           other.practiceClick == this.practiceClick &&
           other.practiceHaptics == this.practiceHaptics &&
-          other.practiceFlash == this.practiceFlash);
+          other.practiceFlash == this.practiceFlash &&
+          other.practiceCountIn == this.practiceCountIn);
 }
 
 class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
@@ -2864,6 +3068,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
   final Value<bool> practiceClick;
   final Value<bool> practiceHaptics;
   final Value<bool> practiceFlash;
+  final Value<int> practiceCountIn;
   const DisplayPrefsCompanion({
     this.id = const Value.absent(),
     this.viewMode = const Value.absent(),
@@ -2876,6 +3081,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
     this.practiceClick = const Value.absent(),
     this.practiceHaptics = const Value.absent(),
     this.practiceFlash = const Value.absent(),
+    this.practiceCountIn = const Value.absent(),
   });
   DisplayPrefsCompanion.insert({
     this.id = const Value.absent(),
@@ -2889,6 +3095,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
     this.practiceClick = const Value.absent(),
     this.practiceHaptics = const Value.absent(),
     this.practiceFlash = const Value.absent(),
+    this.practiceCountIn = const Value.absent(),
   });
   static Insertable<DisplayPrefsRow> custom({
     Expression<int>? id,
@@ -2902,6 +3109,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
     Expression<bool>? practiceClick,
     Expression<bool>? practiceHaptics,
     Expression<bool>? practiceFlash,
+    Expression<int>? practiceCountIn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2915,6 +3123,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
       if (practiceClick != null) 'practice_click': practiceClick,
       if (practiceHaptics != null) 'practice_haptics': practiceHaptics,
       if (practiceFlash != null) 'practice_flash': practiceFlash,
+      if (practiceCountIn != null) 'practice_count_in': practiceCountIn,
     });
   }
 
@@ -2930,6 +3139,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
     Value<bool>? practiceClick,
     Value<bool>? practiceHaptics,
     Value<bool>? practiceFlash,
+    Value<int>? practiceCountIn,
   }) {
     return DisplayPrefsCompanion(
       id: id ?? this.id,
@@ -2943,6 +3153,7 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
       practiceClick: practiceClick ?? this.practiceClick,
       practiceHaptics: practiceHaptics ?? this.practiceHaptics,
       practiceFlash: practiceFlash ?? this.practiceFlash,
+      practiceCountIn: practiceCountIn ?? this.practiceCountIn,
     );
   }
 
@@ -2982,6 +3193,9 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
     if (practiceFlash.present) {
       map['practice_flash'] = Variable<bool>(practiceFlash.value);
     }
+    if (practiceCountIn.present) {
+      map['practice_count_in'] = Variable<int>(practiceCountIn.value);
+    }
     return map;
   }
 
@@ -2998,7 +3212,8 @@ class DisplayPrefsCompanion extends UpdateCompanion<DisplayPrefsRow> {
           ..write('liveAutoReturn: $liveAutoReturn, ')
           ..write('practiceClick: $practiceClick, ')
           ..write('practiceHaptics: $practiceHaptics, ')
-          ..write('practiceFlash: $practiceFlash')
+          ..write('practiceFlash: $practiceFlash, ')
+          ..write('practiceCountIn: $practiceCountIn')
           ..write(')'))
         .toString();
   }
@@ -3108,6 +3323,39 @@ class $LineUpsTable extends LineUps with TableInfo<$LineUpsTable, LineUpRow> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByIdMeta = const VerificationMeta(
+    'updatedById',
+  );
+  @override
+  late final GeneratedColumn<int> updatedById = GeneratedColumn<int>(
+    'updated_by_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByNameMeta = const VerificationMeta(
+    'updatedByName',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByName = GeneratedColumn<String>(
+    'updated_by_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3119,6 +3367,9 @@ class $LineUpsTable extends LineUps with TableInfo<$LineUpsTable, LineUpRow> {
     version,
     songsVersion,
     songsLoaded,
+    updatedAt,
+    updatedById,
+    updatedByName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3201,6 +3452,30 @@ class $LineUpsTable extends LineUps with TableInfo<$LineUpsTable, LineUpRow> {
         ),
       );
     }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('updated_by_id')) {
+      context.handle(
+        _updatedByIdMeta,
+        updatedById.isAcceptableOrUnknown(
+          data['updated_by_id']!,
+          _updatedByIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_by_name')) {
+      context.handle(
+        _updatedByNameMeta,
+        updatedByName.isAcceptableOrUnknown(
+          data['updated_by_name']!,
+          _updatedByNameMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3246,6 +3521,18 @@ class $LineUpsTable extends LineUps with TableInfo<$LineUpsTable, LineUpRow> {
         DriftSqlType.bool,
         data['${effectivePrefix}songs_loaded'],
       )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
+      updatedById: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_by_id'],
+      ),
+      updatedByName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_name'],
+      ),
     );
   }
 
@@ -3274,6 +3561,12 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
   /// Whether [LineUpSongs] holds this line-up's songs. The list endpoint
   /// carries only a count, so songs arrive with the detail (or a local edit).
   final bool songsLoaded;
+
+  /// The server's last shared change: when, and who ([updatedById] and
+  /// [updatedByName] both null when it doesn't know).
+  final DateTime? updatedAt;
+  final int? updatedById;
+  final String? updatedByName;
   const LineUpRow({
     required this.id,
     required this.workspaceId,
@@ -3284,6 +3577,9 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
     required this.version,
     this.songsVersion,
     required this.songsLoaded,
+    this.updatedAt,
+    this.updatedById,
+    this.updatedByName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3301,6 +3597,15 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
       map['songs_version'] = Variable<int>(songsVersion);
     }
     map['songs_loaded'] = Variable<bool>(songsLoaded);
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || updatedById != null) {
+      map['updated_by_id'] = Variable<int>(updatedById);
+    }
+    if (!nullToAbsent || updatedByName != null) {
+      map['updated_by_name'] = Variable<String>(updatedByName);
+    }
     return map;
   }
 
@@ -3319,6 +3624,15 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
           ? const Value.absent()
           : Value(songsVersion),
       songsLoaded: Value(songsLoaded),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      updatedById: updatedById == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedById),
+      updatedByName: updatedByName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedByName),
     );
   }
 
@@ -3337,6 +3651,9 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
       version: serializer.fromJson<int>(json['version']),
       songsVersion: serializer.fromJson<int?>(json['songsVersion']),
       songsLoaded: serializer.fromJson<bool>(json['songsLoaded']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      updatedById: serializer.fromJson<int?>(json['updatedById']),
+      updatedByName: serializer.fromJson<String?>(json['updatedByName']),
     );
   }
   @override
@@ -3352,6 +3669,9 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
       'version': serializer.toJson<int>(version),
       'songsVersion': serializer.toJson<int?>(songsVersion),
       'songsLoaded': serializer.toJson<bool>(songsLoaded),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'updatedById': serializer.toJson<int?>(updatedById),
+      'updatedByName': serializer.toJson<String?>(updatedByName),
     };
   }
 
@@ -3365,6 +3685,9 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
     int? version,
     Value<int?> songsVersion = const Value.absent(),
     bool? songsLoaded,
+    Value<DateTime?> updatedAt = const Value.absent(),
+    Value<int?> updatedById = const Value.absent(),
+    Value<String?> updatedByName = const Value.absent(),
   }) => LineUpRow(
     id: id ?? this.id,
     workspaceId: workspaceId ?? this.workspaceId,
@@ -3377,6 +3700,11 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
     version: version ?? this.version,
     songsVersion: songsVersion.present ? songsVersion.value : this.songsVersion,
     songsLoaded: songsLoaded ?? this.songsLoaded,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    updatedById: updatedById.present ? updatedById.value : this.updatedById,
+    updatedByName: updatedByName.present
+        ? updatedByName.value
+        : this.updatedByName,
   );
   LineUpRow copyWithCompanion(LineUpsCompanion data) {
     return LineUpRow(
@@ -3399,6 +3727,13 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
       songsLoaded: data.songsLoaded.present
           ? data.songsLoaded.value
           : this.songsLoaded,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      updatedById: data.updatedById.present
+          ? data.updatedById.value
+          : this.updatedById,
+      updatedByName: data.updatedByName.present
+          ? data.updatedByName.value
+          : this.updatedByName,
     );
   }
 
@@ -3413,7 +3748,10 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
           ..write('songsCount: $songsCount, ')
           ..write('version: $version, ')
           ..write('songsVersion: $songsVersion, ')
-          ..write('songsLoaded: $songsLoaded')
+          ..write('songsLoaded: $songsLoaded, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('updatedById: $updatedById, ')
+          ..write('updatedByName: $updatedByName')
           ..write(')'))
         .toString();
   }
@@ -3429,6 +3767,9 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
     version,
     songsVersion,
     songsLoaded,
+    updatedAt,
+    updatedById,
+    updatedByName,
   );
   @override
   bool operator ==(Object other) =>
@@ -3442,7 +3783,10 @@ class LineUpRow extends DataClass implements Insertable<LineUpRow> {
           other.songsCount == this.songsCount &&
           other.version == this.version &&
           other.songsVersion == this.songsVersion &&
-          other.songsLoaded == this.songsLoaded);
+          other.songsLoaded == this.songsLoaded &&
+          other.updatedAt == this.updatedAt &&
+          other.updatedById == this.updatedById &&
+          other.updatedByName == this.updatedByName);
 }
 
 class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
@@ -3455,6 +3799,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
   final Value<int> version;
   final Value<int?> songsVersion;
   final Value<bool> songsLoaded;
+  final Value<DateTime?> updatedAt;
+  final Value<int?> updatedById;
+  final Value<String?> updatedByName;
   const LineUpsCompanion({
     this.id = const Value.absent(),
     this.workspaceId = const Value.absent(),
@@ -3465,6 +3812,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
     this.version = const Value.absent(),
     this.songsVersion = const Value.absent(),
     this.songsLoaded = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.updatedById = const Value.absent(),
+    this.updatedByName = const Value.absent(),
   });
   LineUpsCompanion.insert({
     this.id = const Value.absent(),
@@ -3476,6 +3826,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
     this.version = const Value.absent(),
     this.songsVersion = const Value.absent(),
     this.songsLoaded = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.updatedById = const Value.absent(),
+    this.updatedByName = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        title = Value(title),
        date = Value(date);
@@ -3489,6 +3842,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
     Expression<int>? version,
     Expression<int>? songsVersion,
     Expression<bool>? songsLoaded,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? updatedById,
+    Expression<String>? updatedByName,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3500,6 +3856,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
       if (version != null) 'version': version,
       if (songsVersion != null) 'songs_version': songsVersion,
       if (songsLoaded != null) 'songs_loaded': songsLoaded,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (updatedById != null) 'updated_by_id': updatedById,
+      if (updatedByName != null) 'updated_by_name': updatedByName,
     });
   }
 
@@ -3513,6 +3872,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
     Value<int>? version,
     Value<int?>? songsVersion,
     Value<bool>? songsLoaded,
+    Value<DateTime?>? updatedAt,
+    Value<int?>? updatedById,
+    Value<String?>? updatedByName,
   }) {
     return LineUpsCompanion(
       id: id ?? this.id,
@@ -3524,6 +3886,9 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
       version: version ?? this.version,
       songsVersion: songsVersion ?? this.songsVersion,
       songsLoaded: songsLoaded ?? this.songsLoaded,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedById: updatedById ?? this.updatedById,
+      updatedByName: updatedByName ?? this.updatedByName,
     );
   }
 
@@ -3557,6 +3922,15 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
     if (songsLoaded.present) {
       map['songs_loaded'] = Variable<bool>(songsLoaded.value);
     }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (updatedById.present) {
+      map['updated_by_id'] = Variable<int>(updatedById.value);
+    }
+    if (updatedByName.present) {
+      map['updated_by_name'] = Variable<String>(updatedByName.value);
+    }
     return map;
   }
 
@@ -3571,7 +3945,10 @@ class LineUpsCompanion extends UpdateCompanion<LineUpRow> {
           ..write('songsCount: $songsCount, ')
           ..write('version: $version, ')
           ..write('songsVersion: $songsVersion, ')
-          ..write('songsLoaded: $songsLoaded')
+          ..write('songsLoaded: $songsLoaded, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('updatedById: $updatedById, ')
+          ..write('updatedByName: $updatedByName')
           ..write(')'))
         .toString();
   }
@@ -7152,6 +7529,9 @@ typedef $$SongsTableCreateCompanionBuilder = SongsCompanion Function({
   Value<DateTime?> createdAt,
   Value<DateTime?> lastUsedAt,
   Value<int> version,
+  Value<DateTime?> updatedAt,
+  Value<int?> updatedById,
+  Value<String?> updatedByName,
 });
 typedef $$SongsTableUpdateCompanionBuilder = SongsCompanion Function({
   Value<int> id,
@@ -7172,6 +7552,9 @@ typedef $$SongsTableUpdateCompanionBuilder = SongsCompanion Function({
   Value<DateTime?> createdAt,
   Value<DateTime?> lastUsedAt,
   Value<int> version,
+  Value<DateTime?> updatedAt,
+  Value<int?> updatedById,
+  Value<String?> updatedByName,
 });
 
 class $$SongsTableFilterComposer extends Composer<_$AppDatabase, $SongsTable> {
@@ -7269,6 +7652,21 @@ class $$SongsTableFilterComposer extends Composer<_$AppDatabase, $SongsTable> {
 
   ColumnFilters<int> get version => $composableBuilder(
     column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedById => $composableBuilder(
+    column: $table.updatedById,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7371,6 +7769,21 @@ class $$SongsTableOrderingComposer
     column: $table.version,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedById => $composableBuilder(
+    column: $table.updatedById,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SongsTableAnnotationComposer
@@ -7449,6 +7862,19 @@ class $$SongsTableAnnotationComposer
 
   GeneratedColumn<int> get version =>
       $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedById => $composableBuilder(
+    column: $table.updatedById,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => column,
+  );
 }
 
 class $$SongsTableTableManager
@@ -7497,6 +7923,9 @@ class $$SongsTableTableManager
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<int> version = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<int?> updatedById = const Value.absent(),
+                Value<String?> updatedByName = const Value.absent(),
               }) => SongsCompanion(
                 id: id,
                 workspaceId: workspaceId,
@@ -7516,6 +7945,9 @@ class $$SongsTableTableManager
                 createdAt: createdAt,
                 lastUsedAt: lastUsedAt,
                 version: version,
+                updatedAt: updatedAt,
+                updatedById: updatedById,
+                updatedByName: updatedByName,
               ),
           createCompanionCallback:
               ({
@@ -7537,6 +7969,9 @@ class $$SongsTableTableManager
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<int> version = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<int?> updatedById = const Value.absent(),
+                Value<String?> updatedByName = const Value.absent(),
               }) => SongsCompanion.insert(
                 id: id,
                 workspaceId: workspaceId,
@@ -7556,6 +7991,9 @@ class $$SongsTableTableManager
                 createdAt: createdAt,
                 lastUsedAt: lastUsedAt,
                 version: version,
+                updatedAt: updatedAt,
+                updatedById: updatedById,
+                updatedByName: updatedByName,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -8373,6 +8811,7 @@ typedef $$DisplayPrefsTableCreateCompanionBuilder =
       Value<bool> practiceClick,
       Value<bool> practiceHaptics,
       Value<bool> practiceFlash,
+      Value<int> practiceCountIn,
     });
 typedef $$DisplayPrefsTableUpdateCompanionBuilder =
     DisplayPrefsCompanion Function({
@@ -8387,6 +8826,7 @@ typedef $$DisplayPrefsTableUpdateCompanionBuilder =
       Value<bool> practiceClick,
       Value<bool> practiceHaptics,
       Value<bool> practiceFlash,
+      Value<int> practiceCountIn,
     });
 
 class $$DisplayPrefsTableFilterComposer
@@ -8450,6 +8890,11 @@ class $$DisplayPrefsTableFilterComposer
 
   ColumnFilters<bool> get practiceFlash => $composableBuilder(
     column: $table.practiceFlash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get practiceCountIn => $composableBuilder(
+    column: $table.practiceCountIn,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8517,6 +8962,11 @@ class $$DisplayPrefsTableOrderingComposer
     column: $table.practiceFlash,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get practiceCountIn => $composableBuilder(
+    column: $table.practiceCountIn,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DisplayPrefsTableAnnotationComposer
@@ -8576,6 +9026,11 @@ class $$DisplayPrefsTableAnnotationComposer
     column: $table.practiceFlash,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get practiceCountIn => $composableBuilder(
+    column: $table.practiceCountIn,
+    builder: (column) => column,
+  );
 }
 
 class $$DisplayPrefsTableTableManager
@@ -8620,6 +9075,7 @@ class $$DisplayPrefsTableTableManager
                 Value<bool> practiceClick = const Value.absent(),
                 Value<bool> practiceHaptics = const Value.absent(),
                 Value<bool> practiceFlash = const Value.absent(),
+                Value<int> practiceCountIn = const Value.absent(),
               }) => DisplayPrefsCompanion(
                 id: id,
                 viewMode: viewMode,
@@ -8632,6 +9088,7 @@ class $$DisplayPrefsTableTableManager
                 practiceClick: practiceClick,
                 practiceHaptics: practiceHaptics,
                 practiceFlash: practiceFlash,
+                practiceCountIn: practiceCountIn,
               ),
           createCompanionCallback:
               ({
@@ -8646,6 +9103,7 @@ class $$DisplayPrefsTableTableManager
                 Value<bool> practiceClick = const Value.absent(),
                 Value<bool> practiceHaptics = const Value.absent(),
                 Value<bool> practiceFlash = const Value.absent(),
+                Value<int> practiceCountIn = const Value.absent(),
               }) => DisplayPrefsCompanion.insert(
                 id: id,
                 viewMode: viewMode,
@@ -8658,6 +9116,7 @@ class $$DisplayPrefsTableTableManager
                 practiceClick: practiceClick,
                 practiceHaptics: practiceHaptics,
                 practiceFlash: practiceFlash,
+                practiceCountIn: practiceCountIn,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -8703,6 +9162,9 @@ typedef $$LineUpsTableCreateCompanionBuilder = LineUpsCompanion Function({
   Value<int> version,
   Value<int?> songsVersion,
   Value<bool> songsLoaded,
+  Value<DateTime?> updatedAt,
+  Value<int?> updatedById,
+  Value<String?> updatedByName,
 });
 typedef $$LineUpsTableUpdateCompanionBuilder = LineUpsCompanion Function({
   Value<int> id,
@@ -8714,6 +9176,9 @@ typedef $$LineUpsTableUpdateCompanionBuilder = LineUpsCompanion Function({
   Value<int> version,
   Value<int?> songsVersion,
   Value<bool> songsLoaded,
+  Value<DateTime?> updatedAt,
+  Value<int?> updatedById,
+  Value<String?> updatedByName,
 });
 
 class $$LineUpsTableFilterComposer
@@ -8767,6 +9232,21 @@ class $$LineUpsTableFilterComposer
 
   ColumnFilters<bool> get songsLoaded => $composableBuilder(
     column: $table.songsLoaded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedById => $composableBuilder(
+    column: $table.updatedById,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8824,6 +9304,21 @@ class $$LineUpsTableOrderingComposer
     column: $table.songsLoaded,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedById => $composableBuilder(
+    column: $table.updatedById,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LineUpsTableAnnotationComposer
@@ -8871,6 +9366,19 @@ class $$LineUpsTableAnnotationComposer
     column: $table.songsLoaded,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedById => $composableBuilder(
+    column: $table.updatedById,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => column,
+  );
 }
 
 class $$LineUpsTableTableManager
@@ -8910,6 +9418,9 @@ class $$LineUpsTableTableManager
                 Value<int> version = const Value.absent(),
                 Value<int?> songsVersion = const Value.absent(),
                 Value<bool> songsLoaded = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<int?> updatedById = const Value.absent(),
+                Value<String?> updatedByName = const Value.absent(),
               }) => LineUpsCompanion(
                 id: id,
                 workspaceId: workspaceId,
@@ -8920,6 +9431,9 @@ class $$LineUpsTableTableManager
                 version: version,
                 songsVersion: songsVersion,
                 songsLoaded: songsLoaded,
+                updatedAt: updatedAt,
+                updatedById: updatedById,
+                updatedByName: updatedByName,
               ),
           createCompanionCallback:
               ({
@@ -8932,6 +9446,9 @@ class $$LineUpsTableTableManager
                 Value<int> version = const Value.absent(),
                 Value<int?> songsVersion = const Value.absent(),
                 Value<bool> songsLoaded = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<int?> updatedById = const Value.absent(),
+                Value<String?> updatedByName = const Value.absent(),
               }) => LineUpsCompanion.insert(
                 id: id,
                 workspaceId: workspaceId,
@@ -8942,6 +9459,9 @@ class $$LineUpsTableTableManager
                 version: version,
                 songsVersion: songsVersion,
                 songsLoaded: songsLoaded,
+                updatedAt: updatedAt,
+                updatedById: updatedById,
+                updatedByName: updatedByName,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -11132,4 +11652,4 @@ final class AppDatabaseProvider
   }
 }
 
-String _$appDatabaseHash() => r'59cce38d45eeaba199eddd097d8e149d66f9f3e1';
+String _$appDatabaseHash() => r'bc14a6aa5fd00f91db75800cec7231664be62857';

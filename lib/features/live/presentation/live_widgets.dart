@@ -379,55 +379,43 @@ class _Notice extends StatelessWidget {
 /// The cues as a chat on a phone: a tall sheet over the chart. Stays open
 /// as you send; swipe down to get back to Perform.
 Future<void> showCueChat(BuildContext context, {required int lineUpId, required ValueChanged<bool> onSent}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    builder: (sheetContext) => PerformThemed(
-      child: Builder(
-        builder: (themed) {
-          final c = themed.colors;
-          final media = MediaQuery.of(themed);
-          return Padding(
-            padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-            child: SizedBox(
-              height: (media.size.height - media.padding.top - media.viewInsets.bottom) * 0.85,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: c.background,
-                  border: Border.all(color: c.border),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(DaloyRadii.xl3)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(DaloyRadii.xl3)),
-                  child: Column(
-                    children: [
-                      Center(
-                        child: Container(
-                          margin: const EdgeInsets.only(top: DaloySpace.s2),
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(color: c.border, borderRadius: DaloyRadii.all(DaloyRadii.full)),
-                        ),
-                      ),
-                      Expanded(
-                        child: CueChat(
-                          lineUpId: lineUpId,
-                          onSent: onSent,
-                          onClose: () => Navigator.of(sheetContext).pop(),
-                        ),
-                      ),
-                    ],
+  return showPerformModal<void>(
+    context,
+    builder: (themed) {
+      final c = themed.colors;
+      final media = MediaQuery.of(themed);
+      return Padding(
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: SizedBox(
+          height: (media.size.height - media.padding.top - media.viewInsets.bottom) * 0.85,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: c.cueSurface,
+              border: Border.all(color: c.cueEdge),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(DaloyRadii.xl3)),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(DaloyRadii.xl3)),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: DaloySpace.s2),
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(color: c.border, borderRadius: DaloyRadii.all(DaloyRadii.full)),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: CueChat(lineUpId: lineUpId, onSent: onSent, onClose: () => Navigator.of(themed).pop()),
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
-    ),
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -466,8 +454,8 @@ class CuePanel extends ConsumerWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: c.background,
-                border: Border(left: BorderSide(color: c.border)),
+                color: c.cueSurface,
+                border: Border(left: BorderSide(color: c.cueEdge)),
               ),
               child: Padding(
                 padding: EdgeInsets.only(
@@ -565,11 +553,7 @@ class CueChat extends ConsumerWidget {
                     final mine = cue.senderId != null
                         ? cue.senderId == me?.id
                         : cue.senderName != null && cue.senderName == me?.name;
-                    return _CueBubble(
-                      cue: cue,
-                      mine: mine,
-                      continued: previous != null && _sameSender(previous, cue),
-                    );
+                    return _CueBubble(cue: cue, mine: mine, continued: previous != null && _sameSender(previous, cue));
                   },
                 ),
         ),
@@ -631,7 +615,7 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
             ),
             DecoratedBox(
               decoration: BoxDecoration(
-                color: c.muted,
+                color: c.cueBubble,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(DaloyRadii.xl),
                   topRight: Radius.circular(DaloyRadii.xl),
@@ -708,7 +692,7 @@ class _CueBubble extends StatelessWidget {
                   )
                 : DecoratedBox(
                     decoration: BoxDecoration(
-                      color: mine ? c.primary : c.muted,
+                      color: mine ? c.primary : c.cueBubble,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(DaloyRadii.xl),
                         topRight: const Radius.circular(DaloyRadii.xl),
@@ -863,8 +847,8 @@ class _CueChip extends StatelessWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s3),
         decoration: BoxDecoration(
-          color: c.muted,
-          border: Border.all(color: c.border),
+          color: c.cueBubble,
+          border: Border.all(color: c.cueEdge),
           borderRadius: DaloyRadii.all(DaloyRadii.full),
         ),
         child: Text(
@@ -887,6 +871,16 @@ class _NoCues extends StatelessWidget {
     textAlign: centered ? TextAlign.center : null,
     style: context.text.bodySmall!.copyWith(color: context.colors.mutedForeground),
   );
+}
+
+/// The cue chat's surfaces, mixed from the Perform palette's ink so they hold
+/// on every theme (paper and e-ink included). The chart's own background and
+/// hairline vanish beside it, so the panel sits a step off the chart, with a
+/// visible edge, and the team's bubbles a clear step off the panel.
+extension on DaloyColors {
+  Color get cueSurface => Color.alphaBlend(foreground.withValues(alpha: 0.04), background);
+  Color get cueBubble => Color.alphaBlend(foreground.withValues(alpha: 0.1), cueSurface);
+  Color get cueEdge => foreground.withValues(alpha: 0.14);
 }
 
 /// "now", "3 min", "1 h".

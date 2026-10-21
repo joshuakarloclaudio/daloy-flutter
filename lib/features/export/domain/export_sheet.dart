@@ -238,7 +238,7 @@ List<PrintLine> chordSheetLines(
 
 String _barRow(List<BarCell> bars, int repeat, String Function(List<Segment>) atomText) {
   final cells = [
-    for (final bar in bars) [if (bar.simile) '%', ...bar.atoms.map(atomText)].join('  '),
+    for (final bar in bars) [?bar.meter?.value, if (bar.simile) '%', ...bar.atoms.map(atomText)].join('  '),
   ];
   final body = '| ${cells.join(' | ')} |';
   return repeat > 1 ? '$body ×$repeat' : body;
