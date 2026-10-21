@@ -13,6 +13,7 @@ import '../../../../shared/widgets/segmented_control.dart';
 import '../../../songs/application/song_detail_controller.dart' show maxCapo;
 import '../../../songs/chart/nashville.dart';
 import '../../../songs/domain/display_prefs.dart';
+import '../../../songs/presentation/song_actions.dart' show editSongChords, editSongLyrics;
 import '../../../songs/presentation/widgets/chord_sheet.dart';
 import '../../../songs/presentation/widgets/lyrics_sheet.dart';
 import '../../../songs/presentation/widgets/pinch_zoom.dart';
@@ -20,7 +21,8 @@ import '../../../songs/presentation/widgets/stepper_track.dart';
 import '../../application/line_up_detail_controller.dart';
 
 /// A song from the set, drawn the way this line-up plays it: in its key for
-/// the service, with this user's capo. Swipe sideways through the set.
+/// the service, with this user's capo. Swipe sideways through the set. The
+/// pencil goes straight into the chord or lyrics editor for what's showing.
 Future<void> showSetlistSongSheet(BuildContext context, {required int lineUpId, required int position}) =>
     showDaloySheet<void>(
       context: context,
@@ -88,6 +90,9 @@ class _SetlistSongSheetState extends ConsumerState<_SetlistSongSheet> {
     }
     final index = _index.clamp(0, songs.length - 1);
     final current = songs[index];
+    final chords = state.prefs.viewMode == SongViewMode.chords;
+    void edit(SetlistSong song) =>
+        chords ? editSongChords(context, ref, song.entry.song) : editSongLyrics(context, ref, song.entry.song);
 
     return Column(
       children: [
@@ -104,6 +109,11 @@ class _SetlistSongSheetState extends ConsumerState<_SetlistSongSheet> {
                     style: context.text.labelSmall!.copyWith(color: c.mutedForeground),
                   ),
                 ),
+              ),
+              TopBarIconButton(
+                icon: TablerIcons.pencil,
+                tooltip: chords ? 'Edit chords' : 'Edit lyrics',
+                onPressed: () => edit(current),
               ),
               TopBarIconButton(
                 icon: TablerIcons.music,
@@ -137,6 +147,7 @@ class _SetlistSongSheetState extends ConsumerState<_SetlistSongSheet> {
                 ),
               ),
               onPinchEnd: () => _pinchEnd(controller),
+              onEdit: () => edit(songs[i]),
             ),
           ),
         ),
@@ -165,6 +176,7 @@ class _SongPage extends StatelessWidget {
     required this.onPinchActive,
     required this.onPinchUpdate,
     required this.onPinchEnd,
+    required this.onEdit,
   });
 
   final SetlistSong song;
@@ -175,6 +187,9 @@ class _SongPage extends StatelessWidget {
   final ValueChanged<bool> onPinchActive;
   final ValueChanged<double> onPinchUpdate;
   final VoidCallback onPinchEnd;
+
+  /// Into the editor for what's showing (chords or lyrics).
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -290,11 +305,11 @@ class _SongPage extends StatelessWidget {
                                     musicalKey: song.originalKey,
                                     notation: song.notation,
                                   )
-                                : const _Empty('No chords added yet.'),
+                                : _Empty('No chords added yet.', action: 'Add chords', onAction: onEdit),
                           SongViewMode.lyrics =>
                             song.hasLyrics
                                 ? LyricsSheet(lyrics: song.entry.song.lyrics!, zoom: zoom)
-                                : const _Empty('No lyrics added yet.'),
+                                : _Empty('No lyrics added yet.', action: 'Add lyrics', onAction: onEdit),
                         },
                       ),
                     ),
@@ -459,13 +474,22 @@ class _PageDots extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty(this.message);
+  const _Empty(this.message, {required this.action, required this.onAction});
 
   final String message;
+  final String action;
+  final VoidCallback onAction;
 
   @override
-  Widget build(BuildContext context) => Text(
-    message,
-    style: context.text.bodyMedium!.copyWith(color: context.colors.mutedForeground, fontStyle: FontStyle.italic),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        message,
+        style: context.text.bodyMedium!.copyWith(color: context.colors.mutedForeground, fontStyle: FontStyle.italic),
+      ),
+      const SizedBox(height: DaloySpace.s3),
+      DaloyButton.outline(label: action, icon: TablerIcons.plus, size: ControlSize.sm, onPressed: onAction),
+    ],
   );
 }

@@ -16,6 +16,7 @@ import 'desktop_menu_bar.dart';
 import 'desktop_shell.dart';
 import 'floating_tab_bar.dart';
 import 'live_session_bar.dart';
+import 'nearby_presentation_bar.dart';
 import 'primary_action.dart';
 import 'shell_layout.dart';
 import 'tablet_shell.dart';
@@ -44,13 +45,15 @@ class AppShell extends StatelessWidget {
   Widget _frame(BuildContext context) {
     final layout = ShellLayout.of(context);
     // What's playing plays on from tab to tab; a running performance is
-    // joinable from every tab (Home has its own card).
+    // joinable from every tab (Home has its own card), and so is a
+    // teammate's presentation on this Wi-Fi.
     final accessory = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // A tablet or the Mac leaves the bottom edge to the bar.
         MiniPlayerBar(safeBottom: layout.wide),
         LiveSessionBar(hidden: navigationShell.currentIndex == _homeBranch),
+        const NearbyPresentationBar(),
       ],
     );
 

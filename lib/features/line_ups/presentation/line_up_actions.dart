@@ -15,6 +15,7 @@ import '../../../core/router/routes.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/daloy_toast.dart';
 import '../../export/presentation/export_actions.dart';
+import '../../present/presentation/present_join_sheet.dart';
 import '../application/line_up_detail_controller.dart';
 import '../data/line_ups_repository.dart';
 import '../domain/line_up.dart';
@@ -56,6 +57,11 @@ List<DaloyMenuItem> lineUpMenuItems(
       icon: TablerIcons.adjustments_horizontal,
       label: 'Prepare notes & sections',
       onSelected: () => context.push(Routes.lineUpPrepare(lineUp.id)),
+    ),
+    DaloyMenuItem(
+      icon: TablerIcons.device_mobile_share,
+      label: 'Control a presentation…',
+      onSelected: () => joinPresentation(context, ref),
     ),
     if (!live && ref.read(isOnlineProvider))
       DaloyMenuItem(

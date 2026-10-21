@@ -143,6 +143,28 @@ void main() {
       expect(await db.select(db.songEdits).get(), isEmpty);
     });
 
+    test('a value the server normalizes still counts as sent', () async {
+      final (c, db) = await open();
+      final repo = c.read(songDetailRepositoryProvider);
+      // Laravel trims request strings, so the reply never matches a chart
+      // ending in a newline.
+      api.routes['PATCH /api/songs/7/changes'] = (r) {
+        calls.add(jsonEncode(r.data));
+        final changes = ((r.data as Map)['changes'] as Map).cast<String, dynamic>();
+        server.addAll({
+          for (final MapEntry(:key, :value) in changes.entries) key: value is String ? value.trim() : value,
+        });
+        return FakeApiAdapter.ok({...server});
+      };
+      await repo.setChords(7, '[G]Amazing grace, how sweet\n');
+      await repo.flush(1);
+      await repo.flush(1);
+
+      expect(calls, hasLength(1));
+      expect(await db.select(db.songEdits).get(), isEmpty);
+      expect((await repo.loadSong(7))!.content, '[G]Amazing grace, how sweet');
+    });
+
     test('use theirs takes their value and drops the edit', () async {
       final (c, db) = await open();
       final repo = c.read(songDetailRepositoryProvider);

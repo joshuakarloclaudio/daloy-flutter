@@ -16,8 +16,7 @@ final presentLookControllerProvider = PresentLookControllerProvider._();
 
 /// How slides look on this device: theme, font, size, lines per slide.
 /// Kept across sessions (the web keeps them in localStorage).
-final class PresentLookControllerProvider
-    extends $NotifierProvider<PresentLookController, PresentLook> {
+final class PresentLookControllerProvider extends $NotifierProvider<PresentLookController, PresentLook> {
   /// How slides look on this device: theme, font, size, lines per slide.
   /// Kept across sessions (the web keeps them in localStorage).
   PresentLookControllerProvider._()
@@ -40,15 +39,11 @@ final class PresentLookControllerProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(PresentLook value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<PresentLook>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<PresentLook>(value));
   }
 }
 
-String _$presentLookControllerHash() =>
-    r'76fea0658260415d4642493aa06b7034f6c524f8';
+String _$presentLookControllerHash() => r'76fea0658260415d4642493aa06b7034f6c524f8';
 
 /// How slides look on this device: theme, font, size, lines per slide.
 /// Kept across sessions (the web keeps them in localStorage).
@@ -60,13 +55,7 @@ abstract class _$PresentLookController extends $Notifier<PresentLook> {
   WhenComplete runBuild() {
     final ref = this.ref as $Ref<PresentLook, PresentLook>;
     final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<PresentLook, PresentLook>,
-              PresentLook,
-              Object?,
-              Object?
-            >;
+        ref.element as $ClassProviderElement<AnyNotifier<PresentLook, PresentLook>, PresentLook, Object?, Object?>;
     return element.handleCreate(ref, build);
   }
 }
@@ -82,24 +71,18 @@ final presentCursorProvider = PresentCursorFamily._();
 /// rebuilt) and whether the screen is blanked. Kept apart from
 /// [PresentDeckController], which rebuilds on every Drift write.
 final class PresentCursorProvider
-    extends
-        $NotifierProvider<
-          PresentCursor,
-          ({PresentSlide? at, bool blanked, int index})
-        > {
+    extends $NotifierProvider<PresentCursor, ({PresentSlide? at, bool blanked, int index})> {
   /// Where the room is: the slide on the wall (found again when slides are
   /// rebuilt) and whether the screen is blanked. Kept apart from
   /// [PresentDeckController], which rebuilds on every Drift write.
-  PresentCursorProvider._({
-    required PresentCursorFamily super.from,
-    required PerformSource super.argument,
-  }) : super(
-         retry: null,
-         name: r'presentCursorProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+  PresentCursorProvider._({required PresentCursorFamily super.from, required PerformSource super.argument})
+    : super(
+        retry: null,
+        name: r'presentCursorProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
   String debugGetCreateSourceHash() => _$presentCursorHash();
@@ -116,15 +99,10 @@ final class PresentCursorProvider
   PresentCursor create() => PresentCursor();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(
-    ({PresentSlide? at, bool blanked, int index}) value,
-  ) {
+  Override overrideWithValue(({PresentSlide? at, bool blanked, int index}) value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride:
-          $SyncValueProvider<({PresentSlide? at, bool blanked, int index})>(
-            value,
-          ),
+      providerOverride: $SyncValueProvider<({PresentSlide? at, bool blanked, int index})>(value),
     );
   }
 
@@ -167,8 +145,7 @@ final class PresentCursorFamily extends $Family
   /// rebuilt) and whether the screen is blanked. Kept apart from
   /// [PresentDeckController], which rebuilds on every Drift write.
 
-  PresentCursorProvider call(PerformSource source) =>
-      PresentCursorProvider._(argument: source, from: this);
+  PresentCursorProvider call(PerformSource source) => PresentCursorProvider._(argument: source, from: this);
 
   @override
   String toString() => r'presentCursorProvider';
@@ -178,8 +155,7 @@ final class PresentCursorFamily extends $Family
 /// rebuilt) and whether the screen is blanked. Kept apart from
 /// [PresentDeckController], which rebuilds on every Drift write.
 
-abstract class _$PresentCursor
-    extends $Notifier<({PresentSlide? at, bool blanked, int index})> {
+abstract class _$PresentCursor extends $Notifier<({PresentSlide? at, bool blanked, int index})> {
   late final _$args = ref.$arg as PerformSource;
   PerformSource get source => _$args;
 
@@ -188,18 +164,11 @@ abstract class _$PresentCursor
   @override
   WhenComplete runBuild() {
     final ref =
-        this.ref
-            as $Ref<
-              ({PresentSlide? at, bool blanked, int index}),
-              ({PresentSlide? at, bool blanked, int index})
-            >;
+        this.ref as $Ref<({PresentSlide? at, bool blanked, int index}), ({PresentSlide? at, bool blanked, int index})>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<
-                ({PresentSlide? at, bool blanked, int index}),
-                ({PresentSlide? at, bool blanked, int index})
-              >,
+              AnyNotifier<({PresentSlide? at, bool blanked, int index}), ({PresentSlide? at, bool blanked, int index})>,
               ({PresentSlide? at, bool blanked, int index}),
               Object?,
               Object?
@@ -218,8 +187,7 @@ final presentDeckControllerProvider = PresentDeckControllerFamily._();
 /// The deck for a line-up (its keys and section order) or a single song —
 /// built from what's on this device, so it presents offline. Every control
 /// surface (touch, pedal, a paired remote) goes through [apply].
-final class PresentDeckControllerProvider
-    extends $NotifierProvider<PresentDeckController, PresentView> {
+final class PresentDeckControllerProvider extends $NotifierProvider<PresentDeckController, PresentView> {
   /// The deck for a line-up (its keys and section order) or a single song —
   /// built from what's on this device, so it presents offline. Every control
   /// surface (touch, pedal, a paired remote) goes through [apply].
@@ -250,10 +218,7 @@ final class PresentDeckControllerProvider
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(PresentView value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<PresentView>(value),
-    );
+    return $ProviderOverride(origin: this, providerOverride: $SyncValueProvider<PresentView>(value));
   }
 
   @override
@@ -267,22 +232,14 @@ final class PresentDeckControllerProvider
   }
 }
 
-String _$presentDeckControllerHash() =>
-    r'b1f0474a08c7be873ed74d9494773e5d016f39fb';
+String _$presentDeckControllerHash() => r'886cffbaaebaede281a137e7063c135e61ab094b';
 
 /// The deck for a line-up (its keys and section order) or a single song —
 /// built from what's on this device, so it presents offline. Every control
 /// surface (touch, pedal, a paired remote) goes through [apply].
 
 final class PresentDeckControllerFamily extends $Family
-    with
-        $ClassFamilyOverride<
-          PresentDeckController,
-          PresentView,
-          PresentView,
-          PresentView,
-          PerformSource
-        > {
+    with $ClassFamilyOverride<PresentDeckController, PresentView, PresentView, PresentView, PerformSource> {
   PresentDeckControllerFamily._()
     : super(
         retry: null,
@@ -317,13 +274,7 @@ abstract class _$PresentDeckController extends $Notifier<PresentView> {
   WhenComplete runBuild() {
     final ref = this.ref as $Ref<PresentView, PresentView>;
     final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<PresentView, PresentView>,
-              PresentView,
-              Object?,
-              Object?
-            >;
+        ref.element as $ClassProviderElement<AnyNotifier<PresentView, PresentView>, PresentView, Object?, Object?>;
     return element.handleCreate(ref, () => build(_$args));
   }
 }

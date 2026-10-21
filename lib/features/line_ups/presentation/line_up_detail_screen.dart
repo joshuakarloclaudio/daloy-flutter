@@ -21,6 +21,7 @@ import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/widgets/staggered_entrance.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../live/presentation/go_live_dialog.dart';
+import '../../songs/presentation/song_actions.dart' show editSongChords, editSongLyrics;
 import '../../sync/realtime_scope.dart';
 import '../../sync/workspace_realtime.dart';
 import '../application/line_up_detail_controller.dart';
@@ -75,6 +76,16 @@ class _LineUpDetailScreenState extends ConsumerState<LineUpDetailScreen> {
       icon: TablerIcons.note,
       label: 'Team notes',
       onSelected: () => context.push(Routes.lineUpPrepare(widget.lineUpId, song: song.entry.song.id, notes: true)),
+    ),
+    DaloyMenuItem(
+      icon: TablerIcons.pencil,
+      label: song.hasChords ? 'Edit chords' : 'Add chords',
+      onSelected: () => editSongChords(context, ref, song.entry.song),
+    ),
+    DaloyMenuItem(
+      icon: TablerIcons.align_left,
+      label: song.hasLyrics ? 'Edit lyrics' : 'Add lyrics',
+      onSelected: () => editSongLyrics(context, ref, song.entry.song),
     ),
     DaloyMenuItem(
       icon: TablerIcons.music,

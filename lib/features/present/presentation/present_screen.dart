@@ -14,25 +14,27 @@ import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_button.dart';
 import '../../../shared/widgets/daloy_menu.dart';
 import '../../../shared/widgets/daloy_spinner.dart';
+import '../../../shared/widgets/daloy_toast.dart';
 import '../../../shared/widgets/daloy_top_bar.dart';
 import '../../../shared/widgets/glass_buttons.dart';
 import '../../auth/application/session_controller.dart';
 import '../../perform/application/perform_controller.dart' show LineUpSource, PerformSource, SongSource;
 import '../application/present_controller.dart';
 import '../data/present_display.dart';
+import '../data/present_link.dart';
+import '../data/present_trust.dart';
 import '../domain/present_deck.dart';
 import 'present_control_panel.dart';
 import 'present_remote_sheet.dart';
 import 'present_settings_sheet.dart';
 import 'present_shortcuts.dart';
 import 'present_slide_view.dart';
-import 'remote_control_screen.dart';
 
 /// Lyrics for the big screen. With a projector or TV attached (HDMI,
 /// AirPlay, Miracast) the slides go there and this device is the control
 /// panel; without one, the slides fill this screen — tap or swipe the sides
-/// to move, tap the middle for controls. Either way a paired device can
-/// drive it over the local network.
+/// to move, tap the middle for controls. Either way teammates' devices on
+/// the same network see it's presenting and can pair to drive it.
 class PresentScreen extends ConsumerStatefulWidget {
   const PresentScreen({super.key, required this.source});
 
@@ -46,7 +48,14 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
   late final _provider = presentDeckControllerProvider(widget.source);
   late final ScreenAwake _awake = ref.read(screenAwakeProvider);
   late final PresentDisplayChannel _display = ref.read(presentDisplayChannelProvider);
-  RemoteHosting? _hosting;
+  late final RemoteHosting _hosting = RemoteHosting(
+    deviceName: _myName,
+    deviceId: ref.read(presentDeviceIdProvider),
+    workspaceId: ref.read(activeWorkspaceIdProvider),
+    trusted: ref.read(presentTrustedControllersProvider),
+    onCommand: _apply,
+    onPaired: _onPaired,
+  );
 
   /// What the sheets watch: the deck as it changes.
   late final _deck = ValueNotifier<PresentDeckState>(ref.read(_provider).deck);
@@ -62,7 +71,10 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
     unawaited(_awake.hold());
     _scheduleHide();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_syncDisplay(ref.read(externalDisplayProvider).value));
+      if (!mounted) return;
+      ref.read(presentDiscoveryProvider.notifier).enable();
+      unawaited(_syncDisplay(ref.read(externalDisplayProvider).value));
+      _onDeck(_deck.value);
     });
   }
 
@@ -70,19 +82,25 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
   void dispose() {
     _hideTimer?.cancel();
     if (_onDisplay != null) unawaited(_display.hide());
-    _hosting?.dispose();
+    _hosting.dispose();
     _deck.dispose();
     unawaited(_awake.release());
     unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     super.dispose();
   }
 
-  RemoteHosting get _remoteHosting =>
-      _hosting ??= RemoteHosting(deviceName: _myName, onCommand: _apply)..broadcast(_deck.value);
-
   String get _myName => presentDeviceName(context, ref.read(sessionControllerProvider).value?.user.name);
 
   void _apply(PresentCommand command) => ref.read(_provider.notifier).apply(command);
+
+  void _onPaired(PresentPeer peer, {required bool remembered}) {
+    if (!mounted) return;
+    unawaited(HapticFeedback.lightImpact());
+    showDaloyToast(
+      ScaffoldMessenger.maybeOf(context),
+      remembered ? '${peer.name} connected.' : '${peer.name} can now control the slides.',
+    );
+  }
 
   void _command(PresentCommand command) {
     unawaited(HapticFeedback.selectionClick());
@@ -108,7 +126,9 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
 
   void _onDeck(PresentDeckState deck) {
     _deck.value = deck;
-    _hosting?.broadcast(deck);
+    _hosting.broadcast(deck);
+    // Teammates see it once there's something to show.
+    if (deck.slides.isNotEmpty) unawaited(_hosting.start(deck.title));
     if (_onDisplay != null) unawaited(_display.update(deck));
   }
 
@@ -168,30 +188,26 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
 
   Future<void> _openRemote(Rect anchor) async {
     _hideTimer?.cancel();
-    final analytics = ref.read(analyticsProvider);
-    final remote = await showPresentRemoteSheet(
-      context,
-      hosting: _remoteHosting,
-      title: _deck.value.title,
-      myName: _myName,
-      anchor: anchor,
-    );
-    if (remote != null) unawaited(analytics.track(AnalyticsEvent.presentRemotePaired));
-    if (remote != null && mounted) await RemoteControlScreen.open(context, remote);
+    await showPresentRemoteSheet(context, hosting: _hosting, anchor: anchor);
     _scheduleHide();
   }
 
   List<Widget> _actions({required bool glass}) => [
     Builder(
+      builder: (chip) =>
+          PresentDriverChip(hosting: _hosting, glass: glass, onPressed: () => _openRemote(anchorOf(chip))),
+    ),
+    if (glass) const SizedBox(width: DaloySpace.s2),
+    Builder(
       builder: (button) => glass
           ? GlassIconButton(
               icon: TablerIcons.device_mobile_share,
-              label: 'Remote',
+              label: 'Remote control',
               onPressed: () => _openRemote(anchorOf(button)),
             )
           : TopBarIconButton(
               icon: TablerIcons.device_mobile_share,
-              tooltip: 'Remote',
+              tooltip: 'Remote control',
               onPressed: () => _openRemote(anchorOf(button)),
             ),
     ),
@@ -260,11 +276,21 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
     ),
     body: SafeArea(
       top: false,
-      child: PresentControlPanel(
-        deck: deck,
-        onCommand: _command,
-        status: 'On ${display.name}',
-        aspectRatio: display.aspectRatio,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s4),
+            child: PresentJoinRequestBanner(hosting: _hosting),
+          ),
+          Expanded(
+            child: PresentControlPanel(
+              deck: deck,
+              onCommand: _command,
+              status: 'On ${display.name}',
+              aspectRatio: display.aspectRatio,
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -299,6 +325,19 @@ class _PresentScreenState extends ConsumerState<PresentScreen> {
               look: deck.look,
               blanked: deck.blanked,
               aspectRatio: size.height > 0 ? size.width / size.height : 16 / 9,
+            ),
+          ),
+          // Someone asking to pair needs the code now, chrome or not.
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(DaloySpace.s3, 64, DaloySpace.s3, 0),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: PresentJoinRequestBanner(hosting: _hosting, glass: true),
+                ),
+              ),
             ),
           ),
           IgnorePointer(

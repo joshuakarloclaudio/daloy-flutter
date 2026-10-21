@@ -297,6 +297,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the song sheet’s pencil goes straight to the lyrics editor and saves to the song', (tester) async {
+      final c = await pump(tester);
+
+      await tester.tap(find.text('Oceans'));
+      await settle(tester);
+      await tester.tap(find.text('Lyrics'));
+      await settle(tester);
+      await tester.tap(find.bySemanticsLabel('Edit lyrics'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Amazing grace, how sweet');
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+
+      final db = c.read(appDatabaseProvider);
+      final song = await tester.runAsync(() => (db.select(db.songs)..where((t) => t.id.equals(41))).getSingle());
+      expect(song!.lyrics, 'Amazing grace, how sweet');
+      expect(find.text('Lyrics saved to “Oceans”.'), findsOneWidget);
+      // Back on the sheet, showing the new words.
+      expect(find.text('SONG 1 OF 2'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('tablets put the set beside the cover', (tester) async {
       await pump(tester, size: const Size(1024, 768));
 

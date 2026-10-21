@@ -58,6 +58,17 @@ class SongDetailRepository {
   Future<void> setYoutubeUrl(int songId, String url, {DateTime? now}) =>
       _edit(songId, (s) => s.copyWith(youtubeUrl: url), now: now);
 
+  /// Saves new lyrics on this device and queues them for the server
+  /// (Present's section editor, a line-up's quick edit). Every line-up using
+  /// the song picks them up. Blank clears them.
+  Future<void> setLyrics(int songId, String lyrics, {DateTime? now}) =>
+      _edit(songId, (s) => s.copyWith(lyrics: lyrics.trim().isEmpty ? null : lyrics), now: now);
+
+  /// Saves a new chart on this device and queues it for the server (a
+  /// line-up's quick edit). Blank clears it.
+  Future<void> setChords(int songId, String content, {DateTime? now}) =>
+      _edit(songId, (s) => s.copyWith(content: content.trim().isEmpty ? null : content), now: now);
+
   /// Saves the edit screen's fields on this device and queues the ones that
   /// changed. Never waits on the network.
   Future<void> saveFields(int songId, SongFields fields, {DateTime? now}) => _edit(songId, fields.applyTo, now: now);
@@ -317,18 +328,15 @@ class SongDetailRepository {
     ];
     if (fields.isEmpty) return true;
 
+    final sent = {for (final f in fields) f.api: f.read(song)};
     var synced = false;
     _reporter?.sending(edit.songId);
     try {
-      final server = await _service.change(
-        edit.songId,
-        {for (final f in fields) f.api: f.read(song)},
-        {
-          if (!legacy)
-            for (final f in fields) f.api: base[f.api],
-        },
-      );
-      synced = await _settle(edit, fields, server, const {});
+      final server = await _service.change(edit.songId, sent, {
+        if (!legacy)
+          for (final f in fields) f.api: base[f.api],
+      });
+      synced = await _settle(edit, fields, sent, server, const {});
       return true;
     } on ApiConflictException catch (e) {
       final data = e.data;
@@ -338,7 +346,7 @@ class SongDetailRepository {
       }
       final server = Song.fromJson((data['song'] as Map).cast<String, dynamic>());
       final refused = {for (final name in (data['conflicts'] as List? ?? const [])) ?SongField.byApi('$name')};
-      await _settle(edit, fields, server, refused);
+      await _settle(edit, fields, sent, server, refused);
       return true;
     } on NetworkException {
       return false;
@@ -354,51 +362,61 @@ class SongDetailRepository {
   /// re-based on the server's value); [refused] ones become conflicts. The
   /// server's copy is written, keeping what's still pending here. True when
   /// nothing is left to send.
-  Future<bool> _settle(SongEditRow sent, List<SongField> fields, Song server, Set<SongField> refused) =>
-      _db.transaction(() async {
-        final current = await _editRow(sent.songId);
-        final row = await (_db.select(_db.songs)..where((t) => t.id.equals(sent.songId))).getSingleOrNull();
-        if (row == null) return true;
-        final local = SongsRepository.songFromRow(row);
-        final base = SongsRepository.decodeFields(current?.base);
-        final conflicts = SongsRepository.decodeFields(current?.conflicts);
+  ///
+  /// "Edited again" compares against [values], what went out, not the
+  /// server's reply: the server may normalize a value (Laravel trims
+  /// strings), and that must not read as a newer local edit or the field is
+  /// re-sent forever.
+  Future<bool> _settle(
+    SongEditRow sent,
+    List<SongField> fields,
+    Map<String, Object?> values,
+    Song server,
+    Set<SongField> refused,
+  ) => _db.transaction(() async {
+    final current = await _editRow(sent.songId);
+    final row = await (_db.select(_db.songs)..where((t) => t.id.equals(sent.songId))).getSingleOrNull();
+    if (row == null) return true;
+    final local = SongsRepository.songFromRow(row);
+    final base = SongsRepository.decodeFields(current?.base);
+    final conflicts = SongsRepository.decodeFields(current?.conflicts);
 
-        for (final f in fields) {
-          if (refused.contains(f)) {
-            base.remove(f.api);
-            conflicts[f.api] = f.read(server);
-          } else if (sameSongValue(f.read(local), f.read(server))) {
-            base.remove(f.api);
-          } else {
-            // Edited again while the request was out: what it changes from now.
-            base[f.api] = f.read(server);
-          }
-        }
+    for (final f in fields) {
+      if (refused.contains(f)) {
+        base.remove(f.api);
+        conflicts[f.api] = f.read(server);
+      } else if (sameSongValue(f.read(local), values[f.api])) {
+        base.remove(f.api);
+      } else {
+        // Edited again while the request was out: what it changes from now.
+        base[f.api] = f.read(server);
+      }
+    }
 
-        var merged = server;
-        for (final api in [...base.keys, ...conflicts.keys]) {
-          if (SongField.byApi(api) case final f?) merged = f.write(merged, f.read(local));
-        }
-        await _db.into(_db.songs).insertOnConflictUpdate(SongsRepository.songCompanion(merged, row.workspaceId));
+    var merged = server;
+    for (final api in [...base.keys, ...conflicts.keys]) {
+      if (SongField.byApi(api) case final f?) merged = f.write(merged, f.read(local));
+    }
+    await _db.into(_db.songs).insertOnConflictUpdate(SongsRepository.songCompanion(merged, row.workspaceId));
 
-        if (base.isEmpty && conflicts.isEmpty) {
-          await (_db.delete(_db.songEdits)..where((t) => t.songId.equals(sent.songId))).go();
-          return true;
-        }
-        await _db
-            .into(_db.songEdits)
-            .insertOnConflictUpdate(
-              SongEditsCompanion.insert(
-                songId: Value(sent.songId),
-                workspaceId: row.workspaceId,
-                updatedAt: current?.updatedAt ?? sent.updatedAt,
-                base: Value(SongsRepository.encodeFields(base) ?? '{}'),
-                conflicts: Value(SongsRepository.encodeFields(conflicts)),
-                error: Value(conflicts.isEmpty ? null : 'Changed on another device'),
-              ),
-            );
-        return false;
-      });
+    if (base.isEmpty && conflicts.isEmpty) {
+      await (_db.delete(_db.songEdits)..where((t) => t.songId.equals(sent.songId))).go();
+      return true;
+    }
+    await _db
+        .into(_db.songEdits)
+        .insertOnConflictUpdate(
+          SongEditsCompanion.insert(
+            songId: Value(sent.songId),
+            workspaceId: row.workspaceId,
+            updatedAt: current?.updatedAt ?? sent.updatedAt,
+            base: Value(SongsRepository.encodeFields(base) ?? '{}'),
+            conflicts: Value(SongsRepository.encodeFields(conflicts)),
+            error: Value(conflicts.isEmpty ? null : 'Changed on another device'),
+          ),
+        );
+    return false;
+  });
 
   Future<void> _markError(int songId, String message) => (_db.update(
     _db.songEdits,

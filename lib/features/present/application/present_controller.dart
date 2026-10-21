@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -5,6 +7,7 @@ import '../../../core/prefs/device_prefs.dart';
 import '../../line_ups/application/line_up_detail_controller.dart';
 import '../../perform/application/perform_controller.dart' show LineUpSource, PerformSource, SongSource;
 import '../../songs/application/song_detail_controller.dart';
+import '../../songs/data/song_detail_repository.dart';
 import '../domain/present_deck.dart';
 
 part 'present_controller.g.dart';
@@ -78,6 +81,9 @@ class PresentView {
 /// surface (touch, pedal, a paired remote) goes through [apply].
 @riverpod
 class PresentDeckController extends _$PresentDeckController {
+  /// What the slides were built from, for saving an edit back.
+  var _songs = const <PresentSong>[];
+
   @override
   PresentView build(PerformSource source) {
     final look = ref.watch(presentLookControllerProvider);
@@ -101,6 +107,7 @@ class PresentDeckController extends _$PresentDeckController {
             PresentSong(
               key: 'song-${row.entry.lineUpSongId ?? 'p${row.position}'}',
               title: row.title,
+              songId: row.entry.song.id,
               lyrics: row.entry.song.lyrics,
               displayKey: row.displayKey,
               tempo: row.tempo,
@@ -118,6 +125,7 @@ class PresentDeckController extends _$PresentDeckController {
             PresentSong(
               key: 'song-${song.id}',
               title: song.title,
+              songId: song.id,
               lyrics: song.lyrics,
               displayKey: detail.displayKey,
               tempo: [if (song.bpm case final bpm?) '$bpm BPM', ?song.timeSignature].join(' · '),
@@ -125,6 +133,7 @@ class PresentDeckController extends _$PresentDeckController {
         ];
     }
 
+    _songs = songs;
     final slides = buildSlides(songs, linesPerSlide: look.linesPerSlide);
     return PresentView(
       deck: PresentDeckState(
@@ -154,6 +163,24 @@ class PresentDeckController extends _$PresentDeckController {
         cursor.toggleBlank();
       case PresentSetLook(:final look):
         ref.read(presentLookControllerProvider.notifier).set(look);
+      case PresentEditSection():
+        _saveSection(command);
     }
+  }
+
+  /// Writes the section into the song on this device (or the first lyrics
+  /// into a song without any); Drift's update rebuilds the slides, which
+  /// reach the screen and every remote.
+  void _saveSection(PresentEditSection edit) {
+    if (edit.songIndex < 0 || edit.songIndex >= _songs.length) return;
+    final song = _songs[edit.songIndex];
+    final songId = song.songId;
+    if (songId == null) return;
+    final blank = song.lyrics?.trim().isEmpty ?? true;
+    final lyrics = blank
+        ? (edit.sectionId == blankSectionId(song.key) ? edit.lines.join('\n').trim() : null)
+        : replaceSection(song.lyrics!, song.key, edit.sectionId, label: edit.label, lines: edit.lines);
+    if (lyrics == null || lyrics.isEmpty || lyrics == song.lyrics) return;
+    unawaited(ref.read(songDetailRepositoryProvider).setLyrics(songId, lyrics));
   }
 }

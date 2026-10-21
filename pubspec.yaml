@@ -1,7 +1,7 @@
 name: daloy_flutter
 description: "Daloy — worship music management for Android, iOS/iPadOS, macOS and Windows."
 publish_to: 'none'
-version: 1.0.1+5
+version: 1.0.2+6
 
 environment:
   sdk: ^3.13.5
@@ -126,7 +126,7 @@ flutter_native_splash:
 # taken from `version`; bump it for each submission (the last part stays 0).
 msix_config:
   display_name: Daloy
-  msix_version: 1.0.0.0
+  msix_version: 1.0.2.0
   logo_path: assets/icon/icon_macos.png
   # The API, Reverb and YouTube; phones on the network for Present's remote.
   capabilities: internetClient,privateNetworkClientServer

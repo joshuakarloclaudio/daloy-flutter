@@ -2,18 +2,18 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 
 import '../../../core/theme/daloy_theme.dart';
 import '../../../shared/widgets/daloy_button.dart';
+import '../../../shared/widgets/daloy_glass.dart';
 import '../../../shared/widgets/daloy_sheet.dart';
 import '../../../shared/widgets/daloy_spinner.dart';
-import '../../../shared/widgets/daloy_switch.dart';
-import '../../../shared/widgets/daloy_text_field.dart';
 import '../../../shared/widgets/settings_group.dart';
 import '../data/present_link.dart';
+import '../data/present_trust.dart';
 import '../domain/present_deck.dart';
+import 'present_join_sheet.dart' show LocalNetworkHelp;
 
 /// "Ana's iPad": how this device is named to others nearby.
 String presentDeviceName(BuildContext context, String? userName) {
@@ -29,344 +29,347 @@ String presentDeviceName(BuildContext context, String? userName) {
   return first.isEmpty ? 'Daloy $kind' : '$first’s $kind';
 }
 
-/// This device letting others control its presentation: the server, the
-/// code to show, who's paired. Off until asked for.
+/// "4 8 2 1": a code spaced for reading aloud.
+String spacedCode(String code) => code.split('').join(' ');
+
+/// This device's presentation, open to teammates' devices on the same
+/// network from the moment it starts: the server, the code for new devices,
+/// who's asking, who's paired and who's driving.
 class RemoteHosting extends ChangeNotifier {
-  RemoteHosting({required this.deviceName, required this.onCommand});
+  RemoteHosting({
+    required this.deviceName,
+    required String deviceId,
+    required int? workspaceId,
+    required this.trusted,
+    required ValueChanged<PresentCommand> onCommand,
+    this.onPaired,
+  }) : _host = PresentHost(
+         deviceName: deviceName,
+         deviceId: deviceId,
+         workspaceId: workspaceId,
+         trusted: trusted,
+         onCommand: onCommand,
+       ) {
+    _host.codeChanged = (_) => notifyListeners();
+    _host.onPaired = _paired;
+    _host.requests.addListener(notifyListeners);
+    _host.controllers.addListener(notifyListeners);
+    _host.driver.addListener(notifyListeners);
+  }
 
   final String deviceName;
-  final ValueChanged<PresentCommand> onCommand;
+  final PresentKeys trusted;
 
-  PresentHost? _host;
+  /// A device paired; [remembered] when it came back with its key.
+  final void Function(PresentPeer peer, {required bool remembered})? onPaired;
+
+  final PresentHost _host;
   bool _starting = false;
+  bool _disposed = false;
   String? _error;
-  PresentDeckState? _deck;
+  String _title = '';
 
-  bool get enabled => _host != null;
+  bool get running => _host.isRunning;
+
+  /// The port it serves on, while [running].
+  int? get port => _host.port;
   bool get starting => _starting;
   String? get error => _error;
-  String? get code => _host?.code;
-  List<String> get controllers => _host?.controllers.value ?? const [];
+  String get code => _host.code;
+  List<PresentPeer> get requests => _host.requests.value;
+  List<PresentPeer> get controllers => _host.controllers.value;
+  PresentPeer? get driver => _host.driver.value;
 
-  Future<void> enable(String title) async {
-    if (_host != null || _starting) return;
+  /// Paired before but not here now.
+  List<PresentPeer> get remembered => [
+    for (final d in trusted.all)
+      if (!controllers.any((c) => c.id == d.id)) PresentPeer(id: d.id, name: d.name),
+  ];
+
+  /// Opens this presentation to the network; [error] says why it couldn't
+  /// (and stays until [retry]).
+  Future<void> start(String title) async {
+    _title = title;
+    if (_host.isRunning || _starting || _error != null) return;
     _starting = true;
     _error = null;
     notifyListeners();
-    final host = PresentHost(deviceName: deviceName, onCommand: onCommand);
     try {
-      await host.start(title);
-      host.controllers.addListener(notifyListeners);
-      host.codeChanged = (_) => notifyListeners();
-      if (_deck case final deck?) host.broadcast(deck);
-      _host = host;
+      await _host.start(title);
     } on Object {
-      host.dispose();
-      _error = "Couldn't open this device to the network. Check Wi-Fi and Daloy's Local Network permission.";
+      _error = "Other devices can't reach this one. Check Wi-Fi and Daloy's Local Network permission.";
     }
+    if (_disposed) return;
     _starting = false;
     notifyListeners();
   }
 
-  Future<void> disable() async {
-    final host = _host;
-    _host = null;
-    notifyListeners();
-    if (host == null) return;
-    host.controllers.removeListener(notifyListeners);
-    await host.stop();
-    host.dispose();
+  Future<void> retry() {
+    _error = null;
+    return start(_title);
   }
 
-  void broadcast(PresentDeckState deck) {
-    _deck = deck;
-    _host?.broadcast(deck);
+  void _paired(PresentPeer peer, {required bool remembered}) => onPaired?.call(peer, remembered: remembered);
+
+  void broadcast(PresentDeckState deck) => _host.broadcast(deck);
+
+  void decline(String id) => _host.decline(id);
+
+  /// Unpairs [id]; it needs the code again next time.
+  void disconnect(String id) {
+    _host.disconnect(id);
+    notifyListeners();
+  }
+
+  void forget(String id) {
+    trusted.forget(id);
+    notifyListeners();
   }
 
   @override
   void dispose() {
-    unawaited(disable());
+    _disposed = true;
+    _host.requests.removeListener(notifyListeners);
+    _host.controllers.removeListener(notifyListeners);
+    _host.driver.removeListener(notifyListeners);
+    _host.dispose();
     super.dispose();
   }
 }
 
-/// Remote control both ways: let another device drive this one (a code to
-/// type there), or pick a presentation nearby to drive. Pops with the
-/// [PresentRemote] when pairing with another device worked.
-Future<PresentRemote?> showPresentRemoteSheet(
-  BuildContext context, {
-  required RemoteHosting hosting,
-  required String title,
-  required String myName,
-  Rect? anchor,
-}) => showDaloySheet<PresentRemote>(
-  context: context,
-  anchor: anchor,
-  builder: (_) => _RemoteSheet(hosting: hosting, title: title, myName: myName),
-);
+/// Who can control this presentation: the code for new devices, the
+/// devices paired now (one drives) and the ones remembered from before.
+Future<void> showPresentRemoteSheet(BuildContext context, {required RemoteHosting hosting, Rect? anchor}) =>
+    showDaloySheet<void>(
+      context: context,
+      anchor: anchor,
+      builder: (_) => ListenableBuilder(
+        listenable: hosting,
+        builder: (context, _) => _RemoteSheet(hosting: hosting),
+      ),
+    );
 
-class _RemoteSheet extends StatefulWidget {
-  const _RemoteSheet({required this.hosting, required this.title, required this.myName});
+class _RemoteSheet extends StatelessWidget {
+  const _RemoteSheet({required this.hosting});
 
   final RemoteHosting hosting;
-  final String title;
-  final String myName;
-
-  @override
-  State<_RemoteSheet> createState() => _RemoteSheetState();
-}
-
-class _RemoteSheetState extends State<_RemoteSheet> {
-  final _finder = PresentFinder();
-  String? _findError;
-  NearbyPresenter? _pairing;
-  final _code = TextEditingController();
-  String? _pairError;
-  bool _connecting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_finder.start().then((e) => mounted ? setState(() => _findError = e) : null));
-  }
-
-  @override
-  void dispose() {
-    _finder.dispose();
-    _code.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pair() async {
-    final presenter = _pairing;
-    if (presenter == null || _code.text.length != 4 || _connecting) return;
-    setState(() {
-      _connecting = true;
-      _pairError = null;
-    });
-    try {
-      final remote = await PresentRemote.connect(presenter, _code.text, name: widget.myName);
-      unawaited(HapticFeedback.mediumImpact());
-      if (mounted) Navigator.of(context).pop(remote);
-    } on PairingException catch (e) {
-      if (mounted) {
-        setState(() {
-          _connecting = false;
-          _pairError = e.message;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final muted = context.text.bodyMedium!.copyWith(color: c.mutedForeground);
+    final controllers = hosting.controllers;
+    final remembered = hosting.remembered;
     return SafeArea(
       top: false,
       child: ListView(
+        shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(DaloySpace.s5, 0, DaloySpace.s5, DaloySpace.s6),
         children: [
           Text('Remote control', style: context.text.titleMedium),
           const SizedBox(height: DaloySpace.s1),
           Text(
-            'Over this Wi-Fi, no internet needed. Both devices need Daloy open on the same network.',
-            style: context.text.bodyMedium!.copyWith(color: c.mutedForeground),
+            'Teammates on this Wi-Fi see that ${hosting.deviceName} is presenting, '
+            'and can take over the slides from Daloy. No internet needed.',
+            style: muted,
           ),
           const SizedBox(height: DaloySpace.s5),
-          _Label('This ${widget.myName.split(' ').last}'),
-          ListenableBuilder(
-            listenable: widget.hosting,
-            builder: (context, _) => _HostingCard(hosting: widget.hosting, title: widget.title),
-          ),
-          const SizedBox(height: DaloySpace.s6),
-          const _Label('Control another device'),
-          if (_pairing case final presenter?)
-            _PairForm(
-              presenter: presenter,
-              code: _code,
-              error: _pairError,
-              connecting: _connecting,
-              onPair: _pair,
-              onCancel: () => setState(() {
-                _pairing = null;
-                _pairError = null;
-                _code.clear();
-              }),
-            )
-          else
-            ValueListenableBuilder(
-              valueListenable: _finder.presenters,
-              builder: (context, found, _) {
-                final others = [
-                  for (final p in found)
-                    if (!(widget.hosting.enabled && p.by == widget.myName)) p,
-                ];
-                if (others.isEmpty) {
-                  return _Searching(error: _findError);
-                }
-                return SettingsGroup(
-                  children: [
-                    for (final p in others)
-                      SettingsRow(
-                        leading: const SettingsGlyph(TablerIcons.presentation),
-                        title: p.by,
-                        subtitle: p.title.isEmpty ? 'Presenting' : 'Presenting “${p.title}”',
-                        onTap: () => setState(() => _pairing = p),
-                      ),
-                  ],
-                );
-              },
+          if (hosting.starting)
+            const Center(child: DaloySpinner())
+          else if (hosting.error case final error?) ...[
+            Text(error, style: context.text.bodyMedium!.copyWith(color: c.destructive)),
+            const SizedBox(height: DaloySpace.s3),
+            const LocalNetworkHelp(),
+            const SizedBox(height: DaloySpace.s3),
+            DaloyButton.outline(label: 'Try again', onPressed: hosting.retry),
+          ] else ...[
+            const _Label('Code for a new device'),
+            Text(
+              spacedCode(hosting.code),
+              style: context.text.displaySmall!.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              semanticsLabel: 'Code ${spacedCode(hosting.code)}',
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HostingCard extends StatelessWidget {
-  const _HostingCard({required this.hosting, required this.title});
-
-  final RemoteHosting hosting;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final controllers = hosting.controllers;
-    return SettingsGroup(
-      children: [
-        SettingsRow(
-          leading: const SettingsGlyph(TablerIcons.device_mobile_share),
-          title: 'Allow remote control',
-          subtitle: 'Another device can change the slides',
-          chevron: false,
-          trailing: hosting.starting
-              ? const DaloySpinner()
-              : DaloySwitch(
-                  value: hosting.enabled,
-                  semanticLabel: 'Allow remote control',
-                  onChanged: (on) => on ? hosting.enable(title) : hosting.disable(),
-                ),
-          onTap: hosting.starting ? null : () => hosting.enabled ? hosting.disable() : hosting.enable(title),
-        ),
-        if (hosting.error case final error?)
-          Padding(
-            padding: const EdgeInsets.all(DaloySpace.s4),
-            child: Text(error, style: context.text.bodySmall!.copyWith(color: c.destructive)),
-          ),
-        if (hosting.code case final code?)
-          Padding(
-            padding: const EdgeInsets.all(DaloySpace.s4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('PAIRING CODE', style: context.text.labelSmall!.copyWith(color: c.mutedForeground)),
-                const SizedBox(height: DaloySpace.s1),
-                Text(
-                  code.split('').join(' '),
-                  style: context.text.displaySmall!.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-                  semanticsLabel: 'Pairing code ${code.split('').join(' ')}',
-                ),
-                const SizedBox(height: DaloySpace.s2),
-                Text(
-                  controllers.isEmpty
-                      ? 'On the other device, open Present, tap Remote, pick ${hosting.deviceName} and type this code.'
-                      : 'Controlled by ${controllers.join(', ')}.',
-                  style: context.text.bodySmall!.copyWith(color: c.mutedForeground),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _Searching extends StatelessWidget {
-  const _Searching({this.error});
-
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.all(DaloySpace.s4),
-      decoration: BoxDecoration(
-        borderRadius: DaloyRadii.all(DaloyRadii.xl),
-        border: Border.all(color: c.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (error == null)
-            const DaloySpinner(size: 18)
-          else
-            Icon(TablerIcons.wifi_off, size: 18, color: c.mutedForeground),
-          const SizedBox(width: DaloySpace.s3),
-          Expanded(
-            child: Text(
-              error == null
-                  ? 'Looking for presentations nearby… Turn on “Allow remote control” on the presenting device. '
-                        'Some venue Wi-Fi keeps devices apart; a phone’s hotspot works instead.'
-                  : "Can't look on this network. Check Wi-Fi and Daloy's Local Network permission.",
+            const SizedBox(height: DaloySpace.s1),
+            Text(
+              'Asked for once per device. After that it connects by itself.',
               style: context.text.bodySmall!.copyWith(color: c.mutedForeground),
             ),
-          ),
+          ],
+          if (controllers.isNotEmpty) ...[
+            const SizedBox(height: DaloySpace.s6),
+            const _Label('Connected'),
+            SettingsGroup(
+              children: [
+                for (final peer in controllers)
+                  SettingsRow(
+                    leading: const SettingsGlyph(TablerIcons.device_mobile),
+                    title: peer.name,
+                    subtitle: hosting.driver?.id == peer.id ? 'Has control' : 'Watching',
+                    chevron: false,
+                    trailing: DaloyButton(
+                      label: 'Disconnect',
+                      variant: ButtonVariant.destructive,
+                      size: ControlSize.sm,
+                      onPressed: () => hosting.disconnect(peer.id),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (remembered.isNotEmpty) ...[
+            const SizedBox(height: DaloySpace.s6),
+            const _Label('Paired before'),
+            SettingsGroup(
+              children: [
+                for (final peer in remembered)
+                  SettingsRow(
+                    leading: const SettingsGlyph(TablerIcons.device_mobile_off),
+                    title: peer.name,
+                    subtitle: 'Connects without the code',
+                    chevron: false,
+                    trailing: DaloyButton(
+                      label: 'Forget',
+                      variant: ButtonVariant.plain,
+                      onPressed: () => hosting.forget(peer.id),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _PairForm extends StatelessWidget {
-  const _PairForm({
-    required this.presenter,
-    required this.code,
-    required this.error,
-    required this.connecting,
-    required this.onPair,
-    required this.onCancel,
-  });
+/// "Ben's phone wants to control the slides · 4 8 2 1": the code shows only
+/// while someone's asking, here on the presenter and never on the output.
+class PresentJoinRequestBanner extends StatelessWidget {
+  const PresentJoinRequestBanner({super.key, required this.hosting, this.glass = false});
 
-  final NearbyPresenter presenter;
-  final TextEditingController code;
-  final String? error;
-  final bool connecting;
-  final VoidCallback onPair;
-  final VoidCallback onCancel;
+  final RemoteHosting hosting;
+
+  /// Over the slides, rather than in the control panel.
+  final bool glass;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text('Pair with ${presenter.by}', style: context.text.titleSmall),
-      const SizedBox(height: DaloySpace.s3),
-      DaloyTextField(
-        label: 'Code shown on ${presenter.by}',
-        controller: code,
-        error: error,
-        autofocus: true,
-        keyboardType: TextInputType.number,
-        maxLength: 4,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        textInputAction: TextInputAction.go,
-        onSubmitted: (_) => onPair(),
-        onChanged: (v) {
-          if (v.length == 4) onPair();
-        },
-      ),
-      const SizedBox(height: DaloySpace.s3),
-      Row(
-        children: [
-          DaloyButton.outline(label: 'Back', onPressed: connecting ? null : onCancel),
-          const SizedBox(width: DaloySpace.s2),
-          Expanded(
-            child: DaloyButton(label: 'Pair', expand: true, loading: connecting, onPressed: connecting ? null : onPair),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: hosting,
+    builder: (context, _) {
+      final asking = hosting.requests.firstOrNull;
+      final c = context.colors;
+      final Widget child;
+      if (asking == null) {
+        child = const SizedBox(width: double.infinity);
+      } else {
+        final content = Padding(
+          padding: const EdgeInsets.fromLTRB(DaloySpace.s4, DaloySpace.s3, DaloySpace.s2, DaloySpace.s3),
+          child: Row(
+            children: [
+              Icon(TablerIcons.device_mobile_share, size: 20, color: c.primaryInk),
+              const SizedBox(width: DaloySpace.s3),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hosting.requests.length > 1
+                          ? '${asking.name} and ${hosting.requests.length - 1} more want control'
+                          : '${asking.name} wants to control the slides',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.text.bodyMedium!.copyWith(color: c.foreground),
+                    ),
+                    Text(
+                      'Code  ${spacedCode(hosting.code)}',
+                      semanticsLabel: 'Code ${spacedCode(hosting.code)}',
+                      style: context.text.titleLarge!.copyWith(
+                        color: c.foreground,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              DaloyButton(label: 'Decline', variant: ButtonVariant.plain, onPressed: () => hosting.decline(asking.id)),
+            ],
           ),
-        ],
-      ),
-    ],
+        );
+        child = Semantics(
+          liveRegion: true,
+          child: glass
+              ? DaloyGlass(child: content)
+              : Container(
+                  decoration: BoxDecoration(
+                    color: c.primary.withValues(alpha: 0.1),
+                    borderRadius: DaloyRadii.all(DaloyRadii.xl),
+                  ),
+                  child: content,
+                ),
+        );
+      }
+      return AnimatedSize(
+        duration: DaloyMotion.medium,
+        curve: DaloyMotion.ease,
+        alignment: Alignment.topCenter,
+        child: child,
+      );
+    },
+  );
+}
+
+/// "Ben's phone has control": on the presenter while a paired device is
+/// driving. Opens the remote sheet.
+class PresentDriverChip extends StatelessWidget {
+  const PresentDriverChip({super.key, required this.hosting, required this.onPressed, this.glass = false});
+
+  final RemoteHosting hosting;
+  final VoidCallback onPressed;
+  final bool glass;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: hosting,
+    builder: (context, _) {
+      final driver = hosting.driver;
+      if (driver == null) return const SizedBox.shrink();
+      final c = context.colors;
+      final glyphColor = glass ? Colors.white : c.foreground;
+      final label = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: DaloySpace.s3, vertical: DaloySpace.s2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(TablerIcons.device_mobile_share, size: 16, color: glyphColor),
+            const SizedBox(width: DaloySpace.s1_5),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180),
+              child: Text(
+                '${driver.name} has control',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.text.labelMedium!.copyWith(color: glyphColor),
+              ),
+            ),
+          ],
+        ),
+      );
+      return Semantics(
+        button: true,
+        label: '${driver.name} has control. Remote control',
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTap: onPressed,
+          child: glass
+              ? DaloyGlass.capsule(child: label)
+              : Container(
+                  decoration: BoxDecoration(color: c.muted, borderRadius: DaloyRadii.all(DaloyRadii.full)),
+                  child: label,
+                ),
+        ),
+      );
+    },
   );
 }
 

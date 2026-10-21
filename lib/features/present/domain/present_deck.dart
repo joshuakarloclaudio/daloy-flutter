@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../line_ups/domain/line_up.dart';
 import '../../perform/domain/perform_sections.dart';
+import '../../songs/chart/chart_parser.dart' show normalizeNewlines, parseLine, sectionHeader;
 
 enum PresentTheme {
   cinema('Cinema'),
@@ -105,9 +106,11 @@ class PresentSlide {
     required this.songIndex,
     required this.songTitle,
     required this.sectionId,
+    this.songId,
     this.displayKey,
     this.tempo,
     this.label = '',
+    this.labelled = false,
     this.lines = const [],
     this.part = 1,
     this.parts = 1,
@@ -115,6 +118,10 @@ class PresentSlide {
 
   final int songIndex;
   final String songTitle;
+
+  /// The song it's from, for saving an edit (or the first lyrics of a song
+  /// without any); null when there's nothing to save into.
+  final int? songId;
 
   /// The section this slide comes from — finds the same place again when
   /// the split changes.
@@ -124,6 +131,10 @@ class PresentSlide {
   final String? displayKey;
   final String? tempo;
   final String label;
+
+  /// [label] is written in the lyrics as a header (`Chorus:`), so it can be
+  /// renamed; not for an unlabelled stanza or the made-up "Start".
+  final bool labelled;
 
   /// Empty for a song without lyrics.
   final List<String> lines;
@@ -146,9 +157,11 @@ class PresentSlide {
     'songIndex': songIndex,
     'songTitle': songTitle,
     'sectionId': sectionId,
+    'songId': songId,
     'displayKey': displayKey,
     'tempo': tempo,
     'label': label,
+    'labelled': labelled,
     'lines': lines,
     'part': part,
     'parts': parts,
@@ -158,9 +171,11 @@ class PresentSlide {
     songIndex: (json['songIndex'] as num?)?.toInt() ?? 0,
     songTitle: json['songTitle'] as String? ?? '',
     sectionId: json['sectionId'] as String? ?? '',
+    songId: (json['songId'] as num?)?.toInt(),
     displayKey: json['displayKey'] as String?,
     tempo: json['tempo'] as String?,
     label: json['label'] as String? ?? '',
+    labelled: json['labelled'] == true,
     lines: [for (final l in json['lines'] as List? ?? const []) '$l'],
     part: (json['part'] as num?)?.toInt() ?? 1,
     parts: (json['parts'] as num?)?.toInt() ?? 1,
@@ -172,16 +187,29 @@ class PresentSlide {
       other.songIndex == songIndex &&
       other.songTitle == songTitle &&
       other.sectionId == sectionId &&
+      other.songId == songId &&
       other.displayKey == displayKey &&
       other.tempo == tempo &&
       other.label == label &&
+      other.labelled == labelled &&
       listEquals(other.lines, lines) &&
       other.part == part &&
       other.parts == parts;
 
   @override
-  int get hashCode =>
-      Object.hash(songIndex, songTitle, sectionId, displayKey, tempo, label, Object.hashAll(lines), part, parts);
+  int get hashCode => Object.hash(
+    songIndex,
+    songTitle,
+    sectionId,
+    songId,
+    displayKey,
+    tempo,
+    label,
+    labelled,
+    Object.hashAll(lines),
+    part,
+    parts,
+  );
 }
 
 /// A song as Present takes it.
@@ -190,6 +218,7 @@ class PresentSong {
   const PresentSong({
     required this.key,
     required this.title,
+    this.songId,
     this.lyrics,
     this.displayKey,
     this.tempo,
@@ -199,6 +228,9 @@ class PresentSong {
   /// Scopes section ids (`song-<lineUpSongId>`).
   final String key;
   final String title;
+
+  /// Where an edit to its lyrics is saved.
+  final int? songId;
   final String? lyrics;
   final String? displayKey;
   final String? tempo;
@@ -213,9 +245,13 @@ List<PresentSlide> buildSlides(List<PresentSong> songs, {int linesPerSlide = Pre
 ];
 
 List<PresentSlide> _songSlides(PresentSong song, int index, int perSlide) {
+  final lyrics = song.lyrics?.trim();
+  final blankSong = lyrics == null || lyrics.isEmpty;
+
   PresentSlide slide(
     String sectionId, {
     String label = '',
+    bool labelled = false,
     List<String> lines = const [],
     int part = 1,
     int parts = 1,
@@ -223,27 +259,76 @@ List<PresentSlide> _songSlides(PresentSong song, int index, int perSlide) {
     songIndex: index,
     songTitle: song.title,
     sectionId: sectionId,
+    songId: lines.isEmpty && label.isEmpty && !blankSong ? null : song.songId,
     displayKey: song.displayKey,
     tempo: song.tempo,
     label: label,
+    labelled: labelled,
     lines: lines,
     part: part,
     parts: parts,
   );
 
-  final lyrics = song.lyrics?.trim();
-  if (lyrics == null || lyrics.isEmpty) return [slide('${song.key}-empty')];
+  if (blankSong) return [slide(blankSectionId(song.key))];
 
+  final raw = normalizeNewlines(lyrics).split('\n');
   final slides = <PresentSlide>[];
   for (final section in applyArrangement(groupBySections(lyrics, song.key), song.arrangement)) {
     final lines = _trimBlank(section.lines);
     if (lines.isEmpty && section.label.isEmpty) continue;
+    final labelled = _headerLine(raw, section) != null;
     final chunks = splitEvenly(lines, perSlide);
     for (final (p, chunk) in chunks.indexed) {
-      slides.add(slide(section.id, label: section.label, lines: chunk, part: p + 1, parts: chunks.length));
+      slides.add(
+        slide(section.id, label: section.label, labelled: labelled, lines: chunk, part: p + 1, parts: chunks.length),
+      );
     }
   }
-  return slides.isEmpty ? [slide('${song.key}-empty')] : slides;
+  return slides.isEmpty ? [slide(blankSectionId(song.key))] : slides;
+}
+
+/// The one slide of a song with nothing to show.
+String blankSectionId(String songKey) => '$songKey-empty';
+
+/// Where [section]'s header (`Chorus:`) is in [raw], if it was written.
+int? _headerLine(List<String> raw, ChartSection section) {
+  final at = section.startLine - 1;
+  if (at < 0 || at >= raw.length || section.label.isEmpty) return null;
+  return sectionHeader(parseLine(raw[at])) != null ? at : null;
+}
+
+/// [lyrics] with section [sectionId] (as `groupBySections(lyrics, songKey)`
+/// ids it) holding [lines] instead, and renamed to [label] where it has a
+/// header. Blank lines are dropped so the section stays one section and the
+/// line-up's arrangement still points at the same ones. Null when the
+/// section isn't there any more (the song changed meanwhile).
+String? replaceSection(String lyrics, String songKey, String sectionId, {String? label, required List<String> lines}) {
+  final section = groupBySections(lyrics, songKey).where((s) => s.id == sectionId).firstOrNull;
+  if (section == null) return null;
+  final raw = normalizeNewlines(lyrics).split('\n');
+  final kept = [
+    for (final l in lines)
+      if (l.trim().isNotEmpty) l.trimRight(),
+  ];
+
+  // The section's lines are contiguous from its first one: blank lines after
+  // the header come before them, and a blank line would have ended it.
+  var start = section.startLine.clamp(0, raw.length);
+  final firstLine = section.lines.firstOrNull;
+  if (firstLine != null) {
+    while (start < raw.length && raw[start] != firstLine) {
+      start++;
+    }
+    if (start + section.lines.length > raw.length) return null;
+  }
+  final out = [...raw]..replaceRange(start, start + section.lines.length, kept);
+
+  final header = _headerLine(raw, section);
+  final renamed = label?.trim() ?? '';
+  if (header != null && renamed.isNotEmpty && renamed != section.label && raw[header].contains(section.label)) {
+    out[header] = raw[header].replaceFirst(section.label, renamed);
+  }
+  return out.join('\n');
 }
 
 List<String> _trimBlank(List<String> lines) {
@@ -294,6 +379,18 @@ int locateSlide(PresentSlide? at, int index, List<PresentSlide> slides) {
 /// One song in the deck's song list.
 typedef PresentSongEntry = ({int songIndex, String title, String? displayKey, int firstSlide});
 
+/// A section's words as written, for the editor. [blank] is a song with no
+/// lyrics yet: what's written becomes all of them.
+typedef PresentSectionText = ({
+  int songIndex,
+  String songTitle,
+  String sectionId,
+  String label,
+  bool labelled,
+  List<String> lines,
+  bool blank,
+});
+
 /// Everything a screen needs to draw the deck or drive it.
 @immutable
 class PresentDeckState {
@@ -317,6 +414,29 @@ class PresentDeckState {
   PresentSlide? get next => index + 1 < slides.length ? slides[index + 1] : null;
   bool get hasPrev => index > 0;
   bool get hasNext => index < slides.length - 1;
+
+  /// The whole section the slide at [index] is part of, for editing: every
+  /// piece of a split one. Null for a slide with nothing to edit.
+  PresentSectionText? sectionAt(int index) {
+    if (index < 0 || index >= slides.length) return null;
+    final slide = slides[index];
+    if (slide.songId == null) return null;
+    final start = index - (slide.part - 1);
+    final end = start + slide.parts;
+    final pieces = start >= 0 && end <= slides.length ? slides.sublist(start, end) : [slide];
+    final whole = pieces.every((s) => s.songIndex == slide.songIndex && s.sectionId == slide.sectionId);
+    return (
+      songIndex: slide.songIndex,
+      songTitle: slide.songTitle,
+      sectionId: slide.sectionId,
+      label: slide.label,
+      labelled: slide.labelled,
+      lines: [
+        for (final s in whole ? pieces : [slide]) ...s.lines,
+      ],
+      blank: slide.lines.isEmpty && slide.label.isEmpty,
+    );
+  }
 
   List<PresentSongEntry> get songs {
     final out = <PresentSongEntry>[];
@@ -383,6 +503,12 @@ sealed class PresentCommand {
     'jump' => PresentJump((json['index'] as num?)?.toInt() ?? 0),
     'blank' => const PresentToggleBlank(),
     'look' => PresentSetLook(PresentLook.fromJson(((json['look'] as Map?) ?? const {}).cast())),
+    'edit' => PresentEditSection(
+      songIndex: (json['songIndex'] as num?)?.toInt() ?? -1,
+      sectionId: json['sectionId'] as String? ?? '',
+      label: json['label'] as String?,
+      lines: [for (final l in json['lines'] as List? ?? const []) '$l'],
+    ),
     _ => null,
   };
 }
@@ -417,4 +543,24 @@ class PresentSetLook extends PresentCommand {
   final PresentLook look;
   @override
   Map<String, Object?> toJson() => {'type': 'look', 'look': look.toJson()};
+}
+
+/// Rewrites a section's lyrics (and its header's name), saved into the song —
+/// or, for a song without lyrics, writes them all, blank lines and all.
+class PresentEditSection extends PresentCommand {
+  const PresentEditSection({required this.songIndex, required this.sectionId, required this.lines, this.label});
+
+  final int songIndex;
+  final String sectionId;
+  final String? label;
+  final List<String> lines;
+
+  @override
+  Map<String, Object?> toJson() => {
+    'type': 'edit',
+    'songIndex': songIndex,
+    'sectionId': sectionId,
+    'label': label,
+    'lines': lines,
+  };
 }

@@ -18,7 +18,37 @@ import '../../line_ups/presentation/widgets/add_to_line_up_sheet.dart';
 import '../../search/application/discover_controller.dart';
 import '../../search/data/network_songs_repository.dart';
 import '../application/song_deletions.dart';
+import '../chart/nashville.dart';
+import '../data/song_detail_repository.dart';
 import '../domain/song.dart';
+import 'editor/chart_editor_screen.dart';
+import 'editor/lyrics_editor_screen.dart';
+
+/// Straight into the chord editor from wherever the song is (a line-up's
+/// setlist), skipping the edit screen; Done saves into the song.
+Future<void> editSongChords(BuildContext context, WidgetRef ref, Song song) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final repo = ref.read(songDetailRepositoryProvider);
+  final edited = await showChartEditor(
+    context,
+    content: song.content ?? '',
+    musicalKey: song.key,
+    notation: ChordNotation.parse(ref.read(sessionControllerProvider).value?.user.chordNotation),
+  );
+  if (edited == null || edited == (song.content ?? '')) return;
+  await repo.setChords(song.id, edited);
+  showDaloyToast(messenger, 'Chords saved to “${song.title}”.');
+}
+
+/// Straight into the lyrics editor; Done saves into the song.
+Future<void> editSongLyrics(BuildContext context, WidgetRef ref, Song song) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final repo = ref.read(songDetailRepositoryProvider);
+  final edited = await showLyricsEditor(context, lyrics: song.lyrics ?? '');
+  if (edited == null || edited == (song.lyrics ?? '')) return;
+  await repo.setLyrics(song.id, edited);
+  showDaloyToast(messenger, 'Lyrics saved to “${song.title}”.');
+}
 
 /// A song's actions — from a row's touch-and-hold, or the details screen's
 /// ⋯ button ([onDetails]: Edit is already a button there).
