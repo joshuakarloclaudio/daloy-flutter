@@ -18,9 +18,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   flutter::DartProject project(L"data");
-  // On laptops with two GPUs the engine otherwise takes the default adapter,
-  // usually the integrated one.
-  project.set_gpu_preference(flutter::GpuPreference::HighPerformancePreference);
+  // No GPU preference: ANGLE takes the default adapter, the one driving the
+  // display. Forcing the discrete GPU on a hybrid laptop copies every frame
+  // across to the integrated GPU that owns the panel, and if that GPU can't
+  // give the engine a context it falls back to CPU rendering without a word;
+  // either way animations crawl. A 2D UI doesn't need the discrete GPU.
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
