@@ -118,15 +118,18 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           ),
         ),
         Expanded(
-          child: TabletChrome(
-            leadingInset: 0,
-            trailingInset: 0,
-            tabsShowing: false,
-            child: Column(
-              children: [
-                Expanded(child: widget.child),
-                widget.accessory,
-              ],
+          child: ColoredBox(
+            color: context.colors.background,
+            child: TabletChrome(
+              leadingInset: 0,
+              trailingInset: 0,
+              tabsShowing: false,
+              child: Column(
+                children: [
+                  Expanded(child: widget.child),
+                  widget.accessory,
+                ],
+              ),
             ),
           ),
         ),
@@ -234,7 +237,11 @@ class _Sidebar extends ConsumerWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: c.sidebar,
+        // A light tint over a dark blur averages to grey, so light mode lets
+        // far less of the backdrop through than dark mode does.
+        color: hasAcrylic
+            ? c.sidebar.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.6 : 0.85)
+            : c.sidebar,
         border: Border(right: BorderSide(color: c.border, width: 0.5)),
       ),
       child: ClipRect(

@@ -19,8 +19,10 @@ import '../../../../shared/widgets/filter_pill.dart';
 import '../../../../shared/widgets/list_header.dart';
 import '../../../../shared/widgets/list_states.dart';
 import '../../../../shared/widgets/pressable.dart';
+import '../../../../shared/widgets/primary_action_button.dart';
 import '../../../../shared/widgets/pull_to_refresh.dart';
 import '../../../../shared/widgets/skeleton.dart';
+import '../../../../shared/widgets/split_view.dart';
 import '../../../../shared/widgets/staggered_entrance.dart';
 import '../../../../shell/shell_layout.dart';
 import '../../../auth/application/session_controller.dart';
@@ -38,7 +40,10 @@ import 'songs_segment_switch.dart';
 /// Discover — songs other teams shared, to browse and add to your own
 /// library. The other half of the Songs tab (the web's "Song Network").
 class DiscoverScreen extends ConsumerStatefulWidget {
-  const DiscoverScreen({super.key});
+  const DiscoverScreen({super.key, this.onCreate});
+
+  /// The tab's create action (a new song), for the top bar on a wide screen.
+  final VoidCallback? onCreate;
 
   @override
   ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
@@ -48,6 +53,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   final _search = TextEditingController();
   final _scroll = ScrollController();
   int? _adding;
+
+  // A wide window shows the chosen song beside the list, as Library does.
+  bool _split = false;
+  int? _selected;
 
   @override
   void initState() {
@@ -114,7 +123,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     _toTop();
   }
 
-  void _open(NetworkSong song) => showNetworkSongSheet(context, song);
+  void _open(NetworkSong song) {
+    if (_split) {
+      setState(() => _selected = song.id);
+    } else {
+      showNetworkSongSheet(context, song);
+    }
+  }
 
   Future<void> _quickAdd(NetworkSong song) async {
     final workspaceId = ref.read(activeWorkspaceIdProvider);
@@ -153,171 +168,230 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     final isWide = ShellLayout.of(context).wide;
 
-    return Scaffold(
-      appBar: const DaloyTopBar(title: 'Discover', largeTitle: true, actions: [TopBarSearchButton()]),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final side = math.max(gutter, (constraints.maxWidth - DaloyBreakpoints.contentMaxWidth) / 2);
-          final wide = constraints.maxWidth >= DaloyBreakpoints.tablet;
+    Widget listScaffold({required bool compact}) {
+      return Scaffold(
+        appBar: DaloyTopBar(
+          title: 'Discover',
+          largeTitle: true,
+          actions: [
+            const TopBarSearchButton(),
+            if (isWide && widget.onCreate != null)
+              PrimaryActionButton(icon: TablerIcons.plus, label: 'New song', onPressed: widget.onCreate!),
+          ],
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final side = math.max(gutter, (constraints.maxWidth - DaloyBreakpoints.contentMaxWidth) / 2);
+            final wide = constraints.maxWidth >= DaloyBreakpoints.tablet;
 
-          return EntranceScope(
-            ready: !state.loading,
-            child: PullToRefreshScrollView(
-              controller: _scroll,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              onRefresh: online ? _controller.refresh : null,
-              slivers: [
-                SliverLargeTitle('Discover', inset: side, trailing: isWide ? const SongsSegmentSwitch() : null),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: side - gutter),
-                    child: ListHeader(
-                      searchController: _search,
-                      searchHint: 'Search shared songs',
-                      onSearchChanged: (v) {
-                        _controller.setSearch(v);
-                        _toTop();
-                      },
-                      chips: [
-                        Builder(
-                          builder: (pillContext) => FilterPill(
-                            label: query.sort.label,
-                            icon: TablerIcons.arrows_sort,
-                            onTap: () => _pickSort(pillContext),
-                          ),
-                        ),
-                        Builder(
-                          builder: (pillContext) => FilterPill(
-                            label: query.key == null ? 'Key' : 'Key: ${query.key}',
-                            icon: TablerIcons.chevron_down,
-                            trailingIcon: true,
-                            active: query.key != null,
-                            onTap: () => _pickKey(pillContext),
-                          ),
-                        ),
-                        Builder(
-                          builder: (pillContext) => FilterPill(
-                            label: query.tempo?.label ?? 'Tempo',
-                            icon: TablerIcons.chevron_down,
-                            trailingIcon: true,
-                            active: query.tempo != null,
-                            onTap: () => _pickTempo(pillContext),
-                          ),
-                        ),
-                        if (query.hasFilters)
-                          FilterPill(label: 'Clear', icon: TablerIcons.x, quiet: true, onTap: _controller.clearFilters),
-                      ],
+            return EntranceScope(
+              ready: !state.loading,
+              child: PullToRefreshScrollView(
+                controller: _scroll,
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                onRefresh: online ? _controller.refresh : null,
+                slivers: [
+                  SliverLargeTitle(
+                    'Discover',
+                    inset: side,
+                    trailing: isWide && !compact ? const SongsSegmentSwitch() : null,
+                  ),
+                  if (compact)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        height: 52,
+                        padding: EdgeInsets.fromLTRB(side, DaloySpace.s2, side, DaloySpace.s1),
+                        alignment: Alignment.centerLeft,
+                        child: const SongsSegmentSwitch(),
+                      ),
                     ),
-                  ),
-                ),
-                if (showShared)
-                  SliverToBoxAdapter(
-                    child: _SharedByUs(songs: state.shared, side: side, onOpen: _open),
-                  ),
-                if (state.offline && state.songs.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(side, 0, side, DaloySpace.s3),
-                      child: Row(
-                        children: [
-                          Icon(TablerIcons.cloud_off, size: 16, color: context.colors.mutedForeground),
-                          const SizedBox(width: DaloySpace.s2),
-                          Expanded(
-                            child: Text(
-                              'Offline. These may be out of date.',
-                              style: context.text.bodyMedium!.copyWith(color: context.colors.mutedForeground),
+                      padding: EdgeInsets.symmetric(horizontal: side - gutter),
+                      child: ListHeader(
+                        searchController: _search,
+                        searchHint: 'Search shared songs',
+                        onSearchChanged: (v) {
+                          _controller.setSearch(v);
+                          _toTop();
+                        },
+                        chips: [
+                          Builder(
+                            builder: (pillContext) => FilterPill(
+                              label: query.sort.label,
+                              icon: TablerIcons.arrows_sort,
+                              onTap: () => _pickSort(pillContext),
                             ),
                           ),
+                          Builder(
+                            builder: (pillContext) => FilterPill(
+                              label: query.key == null ? 'Key' : 'Key: ${query.key}',
+                              icon: TablerIcons.chevron_down,
+                              trailingIcon: true,
+                              active: query.key != null,
+                              onTap: () => _pickKey(pillContext),
+                            ),
+                          ),
+                          Builder(
+                            builder: (pillContext) => FilterPill(
+                              label: query.tempo?.label ?? 'Tempo',
+                              icon: TablerIcons.chevron_down,
+                              trailingIcon: true,
+                              active: query.tempo != null,
+                              onTap: () => _pickTempo(pillContext),
+                            ),
+                          ),
+                          if (query.hasFilters)
+                            FilterPill(
+                              label: 'Clear',
+                              icon: TablerIcons.x,
+                              quiet: true,
+                              onTap: _controller.clearFilters,
+                            ),
                         ],
                       ),
                     ),
                   ),
-                if (state.loading)
-                  const SliverToBoxAdapter(child: _CardSkeleton())
-                else if (state.offline && state.songs.isEmpty)
-                  SliverToBoxAdapter(
-                    child: ListEmptyState(
-                      icon: TablerIcons.cloud_off,
-                      title: "You're offline",
-                      description: 'Discover needs a connection. Your library is still here.',
-                      actionLabel: 'Try again',
-                      onAction: _controller.refresh,
+                  if (showShared)
+                    SliverToBoxAdapter(
+                      child: _SharedByUs(songs: state.shared, side: side, onOpen: _open),
                     ),
-                  )
-                else if (state.error != null && state.songs.isEmpty)
-                  SliverToBoxAdapter(
-                    child: ListEmptyState(
-                      icon: TablerIcons.alert_circle,
-                      title: "Couldn't load songs",
-                      description: state.error!,
-                      actionLabel: 'Try again',
-                      onAction: _controller.refresh,
-                    ),
-                  )
-                else if (state.songs.isEmpty)
-                  SliverToBoxAdapter(
-                    child: isFiltering
-                        ? ListEmptyState(
-                            icon: TablerIcons.search_off,
-                            title: 'Nothing found',
-                            description: 'No shared songs match. Try fewer filters.',
-                            actionLabel: 'Clear search & filters',
-                            onAction: _clearAll,
-                          )
-                        : const ListEmptyState(
-                            icon: TablerIcons.compass,
-                            title: 'Nothing shared yet',
-                            description: 'When teams share songs, they show up here. Share one of yours from its menu.',
-                          ),
-                  )
-                else ...[
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(side, DaloySpace.s2, side, 0),
-                    sliver: SliverOpacity(
-                      opacity: state.refreshing ? 0.5 : 1,
-                      sliver: wide
-                          ? SliverGrid.builder(
-                              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 480,
-                                mainAxisExtent: MediaQuery.textScalerOf(context).scale(172),
-                                crossAxisSpacing: DaloySpace.s3,
-                                mainAxisSpacing: DaloySpace.s3,
-                              ),
-                              itemCount: state.songs.length,
-                              itemBuilder: (_, i) => _card(state.songs[i], i),
-                            )
-                          : SliverList.separated(
-                              itemCount: state.songs.length,
-                              separatorBuilder: (_, _) => const SizedBox(height: DaloySpace.s3),
-                              itemBuilder: (_, i) => _card(state.songs[i], i),
-                            ),
-                    ),
-                  ),
-                  if (state.loadingMore)
-                    const SliverToBoxAdapter(
+                  if (state.offline && state.songs.isNotEmpty)
+                    SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.all(DaloySpace.s6),
-                        child: Center(child: DaloySpinner(size: 20)),
+                        padding: EdgeInsets.fromLTRB(side, 0, side, DaloySpace.s3),
+                        child: Row(
+                          children: [
+                            Icon(TablerIcons.cloud_off, size: 16, color: context.colors.mutedForeground),
+                            const SizedBox(width: DaloySpace.s2),
+                            Expanded(
+                              child: Text(
+                                'Offline. These may be out of date.',
+                                style: context.text.bodyMedium!.copyWith(color: context.colors.mutedForeground),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  if (state.loading)
+                    const SliverToBoxAdapter(child: _CardSkeleton())
+                  else if (state.offline && state.songs.isEmpty)
+                    SliverToBoxAdapter(
+                      child: ListEmptyState(
+                        icon: TablerIcons.cloud_off,
+                        title: "You're offline",
+                        description: 'Discover needs a connection. Your library is still here.',
+                        actionLabel: 'Try again',
+                        onAction: _controller.refresh,
+                      ),
+                    )
+                  else if (state.error != null && state.songs.isEmpty)
+                    SliverToBoxAdapter(
+                      child: ListEmptyState(
+                        icon: TablerIcons.alert_circle,
+                        title: "Couldn't load songs",
+                        description: state.error!,
+                        actionLabel: 'Try again',
+                        onAction: _controller.refresh,
+                      ),
+                    )
+                  else if (state.songs.isEmpty)
+                    SliverToBoxAdapter(
+                      child: isFiltering
+                          ? ListEmptyState(
+                              icon: TablerIcons.search_off,
+                              title: 'Nothing found',
+                              description: 'No shared songs match. Try fewer filters.',
+                              actionLabel: 'Clear search & filters',
+                              onAction: _clearAll,
+                            )
+                          : const ListEmptyState(
+                              icon: TablerIcons.compass,
+                              title: 'Nothing shared yet',
+                              description:
+                                  'When teams share songs, they show up here. Share one of yours from its menu.',
+                            ),
+                    )
+                  else ...[
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(side, DaloySpace.s2, side, 0),
+                      sliver: SliverOpacity(
+                        opacity: state.refreshing ? 0.5 : 1,
+                        sliver: wide && !compact
+                            ? SliverGrid.builder(
+                                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 480,
+                                  mainAxisExtent: MediaQuery.textScalerOf(context).scale(172),
+                                  crossAxisSpacing: DaloySpace.s3,
+                                  mainAxisSpacing: DaloySpace.s3,
+                                ),
+                                itemCount: state.songs.length,
+                                itemBuilder: (_, i) => _card(state.songs[i], i),
+                              )
+                            : SliverList.separated(
+                                itemCount: state.songs.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: DaloySpace.s3),
+                                itemBuilder: (_, i) => _card(state.songs[i], i),
+                              ),
+                      ),
+                    ),
+                    if (state.loadingMore)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(DaloySpace.s6),
+                          child: Center(child: DaloySpinner(size: 20)),
+                        ),
+                      ),
+                  ],
+                  SliverToBoxAdapter(child: SizedBox(height: DaloySpace.s10 + MediaQuery.paddingOf(context).bottom)),
                 ],
-                SliverToBoxAdapter(child: SizedBox(height: DaloySpace.s10 + MediaQuery.paddingOf(context).bottom)),
-              ],
-            ),
-          );
-        },
-      ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        _split = isWide && SplitView.fits(context, box.maxWidth);
+        if (!_split) return listScaffold(compact: false);
+        // A song filtered away (or unshared) leaves the pane empty.
+        final selected = _selected;
+        final chosen = selected == null
+            ? null
+            : [...state.songs, ...state.shared].where((s) => s.id == selected).firstOrNull;
+        return SplitView(
+          list: listScaffold(compact: true),
+          detail: chosen == null
+              ? null
+              : Scaffold(
+                  key: ValueKey(chosen.id),
+                  appBar: const DaloyTopBar(),
+                  body: NetworkSongPanel(
+                    song: chosen,
+                    onAdded: (_) {},
+                    onUnshared: () => setState(() => _selected = null),
+                  ),
+                ),
+          placeholder: const SplitPlaceholder(icon: TablerIcons.compass, message: 'Choose a song'),
+        );
+      },
     );
   }
 
   Widget _card(NetworkSong song, int index) => Entrance(
     key: ValueKey(song.id),
     index: index,
-    child: DiscoverSongCard(
-      song: song,
-      adding: _adding == song.id,
-      onTap: () => _open(song),
-      onAdd: () => _quickAdd(song),
+    child: PaneSelection(
+      selected: _split && song.id == _selected,
+      child: DiscoverSongCard(
+        song: song,
+        adding: _adding == song.id,
+        onTap: () => _open(song),
+        onAdd: () => _quickAdd(song),
+      ),
     ),
   );
 }

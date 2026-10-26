@@ -7,6 +7,7 @@ import 'core/prefs/device_prefs.dart';
 import 'core/router/app_router.dart';
 import 'core/router/incoming_links.dart';
 import 'core/theme/daloy_theme.dart';
+import 'core/utils/window_backdrop.dart';
 import 'features/lock/app_lock.dart';
 
 class DaloyApp extends ConsumerWidget {
@@ -28,7 +29,9 @@ class DaloyApp extends ConsumerWidget {
       scrollBehavior: const CupertinoScrollBehavior(),
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) => IncomingLinks(
-        child: AnalyticsScope(child: AppLock(child: child ?? const SizedBox.shrink())),
+        child: WindowBackdropSync(
+          child: AnalyticsScope(child: AppLock(child: child ?? const SizedBox.shrink())),
+        ),
       ),
     );
   }

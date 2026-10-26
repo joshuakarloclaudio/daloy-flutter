@@ -1,8 +1,33 @@
 #include "flutter_window.h"
 
+#include <dwmapi.h>
+
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+
+// DWMWA_SYSTEMBACKDROP_TYPE and DWMSBT_TRANSIENTWINDOW (acrylic), Windows 11
+// 22H2. Spelled out so older SDK headers still build.
+constexpr DWORD kSystemBackdropType = 38;
+constexpr int kBackdropAcrylic = 3;
+
+// The compositor blurs what is behind the window, so the app pays nothing per
+// frame. Fails before build 22621, where the Dart side keeps its solid fills
+// (`hasAcrylic` in lib/core/utils/platform.dart).
+void EnableAcrylic(HWND window) {
+  int backdrop = kBackdropAcrylic;
+  if (FAILED(DwmSetWindowAttribute(window, kSystemBackdropType, &backdrop,
+                                   sizeof(backdrop)))) {
+    return;
+  }
+  // Let the backdrop through the whole client area.
+  MARGINS margins = {-1, -1, -1, -1};
+  DwmExtendFrameIntoClientArea(window, &margins);
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -27,6 +52,26 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
+  EnableAcrylic(GetHandle());
+  window_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "daloy/window",
+          &flutter::StandardMethodCodec::GetInstance());
+  window_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        const auto* dark = std::get_if<bool>(call.arguments());
+        if (call.method_name() == "setDark" && dark != nullptr) {
+          BOOL enable = *dark ? TRUE : FALSE;
+          DwmSetWindowAttribute(GetHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE,
+                                &enable, sizeof(enable));
+          result->Success();
+        } else {
+          result->NotImplemented();
+        }
+      });
+
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
@@ -40,6 +85,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  window_channel_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

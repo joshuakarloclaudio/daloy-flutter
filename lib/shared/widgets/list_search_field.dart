@@ -5,13 +5,20 @@ import '../../core/theme/daloy_theme.dart';
 
 /// The filled, borderless search field at the top of a list screen.
 class ListSearchField extends StatelessWidget {
-  const ListSearchField({super.key, required this.controller, required this.onChanged, required this.hint});
+  const ListSearchField({
+    super.key,
+    required this.controller,
+    required this.onChanged,
+    required this.hint,
+    this.height = defaultHeight,
+  });
 
-  static const height = 44.0;
+  static const defaultHeight = 44.0;
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final String hint;
+  final double height;
 
   static final _borderless = OutlineInputBorder(
     borderRadius: DaloyRadii.all(DaloyRadii.xl),

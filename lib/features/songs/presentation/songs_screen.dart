@@ -11,6 +11,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/theme/daloy_theme.dart';
 import '../../../shared/widgets/daloy_spinner.dart';
 import '../../../shared/widgets/daloy_top_bar.dart';
+import '../../../shared/widgets/list_header.dart';
 import '../../../shared/widgets/list_states.dart';
 import '../../../shared/widgets/pinned_section_header.dart';
 import '../../../shared/widgets/primary_action_button.dart';
@@ -73,6 +74,10 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
   bool _split = false;
   bool _compactList = false;
   int? _selected;
+
+  // The search/filter header's height at the width it last laid out at — it is
+  // one row on a wide desktop, stacked otherwise.
+  double _headerHeight = ListHeader.height;
 
   @override
   void dispose() {
@@ -144,7 +149,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
 
   void _jumpToLetter(String letter, double rowExtent) {
     if (!_scroll.hasClients) return;
-    var offset = _leadExtent + SongListHeader.height;
+    var offset = _leadExtent + _headerHeight;
     for (final section in _sections) {
       if (section.letter == letter) break;
       offset += PinnedSectionHeader.height + section.songs.length * rowExtent;
@@ -210,7 +215,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
     _revealTimer = Timer(const Duration(milliseconds: 1800), _endReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) return;
-      var offset = _leadExtent + SongListHeader.height;
+      var offset = _leadExtent + _headerHeight;
       for (final section in _sections) {
         if (section.letter != null) offset += PinnedSectionHeader.height;
         final index = section.songs.indexWhere((s) => s.id == song.id);
@@ -243,7 +248,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
       inline: const SongsSegmentSwitch(),
       child: screen,
     );
-    if (ref.watch(songsSegmentControllerProvider) == SongsSegment.discover) return inBar(const DiscoverScreen());
+    if (ref.watch(songsSegmentControllerProvider) == SongsSegment.discover) return inBar(DiscoverScreen(onCreate: _create));
     final query = ref.watch(songListControllerProvider);
     final library = ref.watch(librarySongsProvider);
     final sync = ref.watch(workspaceSyncProvider);
@@ -288,6 +293,7 @@ class _SongsScreenState extends ConsumerState<SongsScreen> {
             // (and its scrollbar) stays full width.
             final side = math.max(gutter, (constraints.maxWidth - DaloyBreakpoints.contentMaxWidth) / 2);
             final listSide = math.max(0.0, side - DaloySpace.s4);
+            _headerHeight = ListHeader.heightFor(constraints.maxWidth - 2 * (side - gutter));
 
             final list = EntranceScope(
               ready: !loading,

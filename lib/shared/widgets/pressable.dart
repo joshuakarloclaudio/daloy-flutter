@@ -44,30 +44,33 @@ class _PressableState extends State<Pressable> {
       button: true,
       enabled: enabled,
       label: widget.semanticLabel,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: enabled ? (_) => _set(true) : null,
-        onTapUp: enabled ? (_) => _set(false) : null,
-        onTapCancel: enabled ? () => _set(false) : null,
-        onTap: widget.onPressed,
-        onLongPress: widget.onLongPress == null
-            ? null
-            : () {
-                HapticFeedback.mediumImpact();
-                widget.onLongPress!();
-              },
-        child: AnimatedScale(
-          scale: _pressed ? widget.pressedScale : 1,
-          duration: DaloyMotion.fast,
-          curve: DaloyMotion.ease,
-          child: widget.pressedOpacity == 1
-              ? widget.child
-              : AnimatedOpacity(
-                  opacity: _pressed ? widget.pressedOpacity : 1,
-                  duration: DaloyMotion.fast,
-                  curve: DaloyMotion.ease,
-                  child: widget.child,
-                ),
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: enabled ? (_) => _set(true) : null,
+          onTapUp: enabled ? (_) => _set(false) : null,
+          onTapCancel: enabled ? () => _set(false) : null,
+          onTap: widget.onPressed,
+          onLongPress: widget.onLongPress == null
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  widget.onLongPress!();
+                },
+          child: AnimatedScale(
+            scale: _pressed ? widget.pressedScale : 1,
+            duration: DaloyMotion.fast,
+            curve: DaloyMotion.ease,
+            child: widget.pressedOpacity == 1
+                ? widget.child
+                : AnimatedOpacity(
+                    opacity: _pressed ? widget.pressedOpacity : 1,
+                    duration: DaloyMotion.fast,
+                    curve: DaloyMotion.ease,
+                    child: widget.child,
+                  ),
+          ),
         ),
       ),
     );

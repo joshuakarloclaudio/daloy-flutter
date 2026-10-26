@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/daloy_theme.dart';
+import '../../core/utils/platform.dart';
+import 'daloy_button.dart';
 import 'glass_buttons.dart';
 
 /// A screen's one create action. iOS has no floating action button: with a
@@ -22,6 +24,13 @@ class PrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A pointer has room for the word: "New song" beats an unlabelled +.
+    if (isDesktop) {
+      return Padding(
+        padding: const EdgeInsets.only(left: DaloySpace.s2, right: DaloySpace.s1),
+        child: DaloyButton(label: label, icon: icon, size: ControlSize.sm, onPressed: onPressed),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(left: DaloySpace.s1),
       child: GlassIconButton(icon: icon, label: label, onPressed: onPressed, prominent: true),

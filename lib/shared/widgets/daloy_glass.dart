@@ -15,10 +15,11 @@ import '../../core/utils/platform.dart';
 /// sheets. Content stays flat, and glass is never nested or put in a list.
 /// One [BackdropFilter] per instance.
 ///
-/// Windows draws it solid: there the engine renders through ANGLE, where a
+/// Windows skips the blur: there the engine renders through ANGLE, where a
 /// backdrop blur is redone every frame anything under it moves, and the
-/// mini player and live bar sit over scrolling lists. The shadow and
-/// hairline stay, so it still floats.
+/// mini player and live bar sit over scrolling lists. A dense translucent
+/// tint, the sheen, shadow and hairline stay, so it still floats. The real
+/// blur is the window's acrylic, drawn by the compositor (`hasAcrylic`).
 class DaloyGlass extends StatelessWidget {
   const DaloyGlass({
     super.key,
@@ -98,6 +99,10 @@ class DaloyGlass extends StatelessWidget {
   /// bars and buttons do.
   static const _denseAlpha = 0.62;
 
+  /// Windows has no blur, so the tint is the glass: opaque enough that rows
+  /// scrolling underneath can't fight the text, clear enough to read as glass.
+  static const _windowsAlpha = 0.86;
+
   /// Behind the tint: the blur, with the colour turned up so what's under
   /// the glass shows through bright, not greyed.
   static final _backdrop = ImageFilter.compose(
@@ -141,7 +146,7 @@ class DaloyGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final solid = flat || isWindows;
+    final blurless = flat || isWindows;
     final shape = circle ? BoxShape.circle : BoxShape.rectangle;
     final radius = circle ? null : borderRadius;
     final edge =
@@ -156,7 +161,7 @@ class DaloyGlass extends StatelessWidget {
         color: flat
             ? (tint ?? c.background)
             : isWindows
-            ? (tint ?? (dark ? c.card : c.background))
+            ? (tint ?? (dark ? c.card : c.background)).withValues(alpha: math.max(tintAlpha ?? 0, _windowsAlpha))
             : (tint ?? (dark ? c.card : c.background)).withValues(alpha: tintAlpha ?? (dark ? 0.55 : 0.5)),
       ),
       child: DecoratedBox(
@@ -164,7 +169,7 @@ class DaloyGlass extends StatelessWidget {
           shape: shape,
           borderRadius: radius,
           border: edge,
-          gradient: solid || !sheen
+          gradient: flat || !sheen
               ? null
               : LinearGradient(
                   begin: Alignment.topCenter,
@@ -179,7 +184,7 @@ class DaloyGlass extends StatelessWidget {
       ),
     );
 
-    Widget frosted = solid ? surface : BackdropFilter(filter: _backdrop, child: surface);
+    Widget frosted = blurless ? surface : BackdropFilter(filter: _backdrop, child: surface);
     frosted = circle ? ClipOval(child: frosted) : ClipRRect(borderRadius: radius ?? BorderRadius.zero, child: frosted);
 
     if (!shadow || flat) return frosted;

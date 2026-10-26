@@ -5,6 +5,7 @@ import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/daloy_theme.dart';
+import '../core/utils/platform.dart';
 import '../features/app_update/presentation/app_update_sheet.dart';
 import '../features/auth/application/session_controller.dart';
 import '../features/player/presentation/mini_player.dart';
@@ -62,6 +63,9 @@ class AppShell extends StatelessWidget {
         child: DesktopMenuBar(
           currentIndex: navigationShell.currentIndex,
           child: Scaffold(
+            // Let the window's acrylic through to the sidebar; the content
+            // pane paints its own ground (`DesktopShell`).
+            backgroundColor: hasAcrylic ? Colors.transparent : null,
             body: RealtimeScope(
               child: OsSearchScope(
                 child: DesktopShell(

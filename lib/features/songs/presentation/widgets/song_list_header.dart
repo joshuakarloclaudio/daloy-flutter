@@ -21,8 +21,6 @@ class SongListHeader extends StatelessWidget {
     required this.onClear,
   });
 
-  static const height = ListHeader.height;
-
   final TextEditingController searchController;
   final SongListQuery query;
   final ValueChanged<String> onSearchChanged;

@@ -33,16 +33,48 @@ Future<void> showNetworkSongSheet(BuildContext context, NetworkSong song) => sho
   builder: (_) => _NetworkSongSheet(song: song),
 );
 
-class _NetworkSongSheet extends ConsumerStatefulWidget {
+class _NetworkSongSheet extends StatelessWidget {
   const _NetworkSongSheet({required this.song});
 
   final NetworkSong song;
 
   @override
-  ConsumerState<_NetworkSongSheet> createState() => _NetworkSongSheetState();
+  Widget build(BuildContext context) => DraggableScrollableSheet(
+    expand: false,
+    initialChildSize: 0.85,
+    maxChildSize: 1,
+    minChildSize: 0.4,
+    builder: (context, scroll) => NetworkSongPanel(
+      song: song,
+      scroll: scroll,
+      // Adding opens the copy.
+      onAdded: (id) {
+        final router = GoRouter.of(context);
+        Navigator.of(context).pop();
+        unawaited(router.push(Routes.song(id)));
+      },
+      onUnshared: () => Navigator.of(context).pop(),
+    ),
+  );
 }
 
-class _NetworkSongSheetState extends ConsumerState<_NetworkSongSheet> {
+/// The shared song itself — chart, links and the add / stop-sharing button —
+/// in the sheet on a phone and in Discover's detail pane on the desktop.
+class NetworkSongPanel extends ConsumerStatefulWidget {
+  const NetworkSongPanel({super.key, required this.song, required this.onAdded, required this.onUnshared, this.scroll});
+
+  final NetworkSong song;
+  final ScrollController? scroll;
+
+  /// The song was added; [id] is the copy in this workspace.
+  final ValueChanged<int> onAdded;
+  final VoidCallback onUnshared;
+
+  @override
+  ConsumerState<NetworkSongPanel> createState() => _NetworkSongPanelState();
+}
+
+class _NetworkSongPanelState extends ConsumerState<NetworkSongPanel> {
   bool _adding = false;
   bool _unsharing = false;
   String? _error;
@@ -67,7 +99,7 @@ class _NetworkSongSheetState extends ConsumerState<_NetworkSongSheet> {
       unawaited(ref.read(discoverControllerProvider.notifier).refresh());
       if (!mounted) return;
       unawaited(HapticFeedback.mediumImpact());
-      Navigator.of(context).pop();
+      widget.onUnshared();
     } on NetworkException {
       if (mounted) setState(() => _error = "You're offline. Connect to stop sharing.");
     } on ApiException catch (e) {
@@ -89,9 +121,7 @@ class _NetworkSongSheetState extends ConsumerState<_NetworkSongSheet> {
       ref.read(discoverControllerProvider.notifier).markAdded(widget.song.id);
       if (!mounted) return;
       unawaited(HapticFeedback.mediumImpact());
-      final router = GoRouter.of(context);
-      Navigator.of(context).pop();
-      unawaited(router.push(Routes.song(id)));
+      widget.onAdded(id);
     } on NetworkException {
       if (mounted) setState(() => _error = "You're offline. Connect to add this song.");
     } on ApiException catch (e) {
@@ -106,128 +136,123 @@ class _NetworkSongSheetState extends ConsumerState<_NetworkSongSheet> {
     final c = context.colors;
     final detail = ref.watch(networkSongProvider(widget.song.id));
     final song = detail.value ?? widget.song;
+    final added = widget.song.alreadyAdded || song.alreadyAdded;
     final meta = [
       if (song.artist?.isNotEmpty == true) song.artist!,
       if (song.key?.isNotEmpty == true) 'Key of ${song.key}',
     ].join(' · ');
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.85,
-      maxChildSize: 1,
-      minChildSize: 0.4,
-      builder: (context, scroll) => Column(
-        children: [
-          Expanded(
-            child: ListView(
-              controller: scroll,
-              padding: const EdgeInsets.fromLTRB(DaloySpace.s5, DaloySpace.s2, DaloySpace.s5, DaloySpace.s6),
-              children: [
-                Row(
-                  children: [
-                    Icon(TablerIcons.world, size: 16, color: c.mutedForeground),
-                    const SizedBox(width: DaloySpace.s1_5),
-                    Expanded(
-                      child: Text(
-                        song.isOwnWorkspace
-                            ? 'Discover · shared by your team'
-                            : 'Discover · shared by ${song.workspaceName}',
-                        style: context.text.labelLarge!.copyWith(color: c.mutedForeground),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: DaloySpace.s3),
-                Text(song.title, style: context.text.displaySmall),
-                if (meta.isNotEmpty) ...[
-                  const SizedBox(height: DaloySpace.s1),
-                  Text(meta, style: context.text.bodyLarge!.copyWith(color: c.mutedForeground)),
-                ],
-                if (song.importCount > 0) ...[
-                  const SizedBox(height: DaloySpace.s1),
-                  Text(
-                    song.importCount == 1 ? 'Added by 1 workspace' : 'Added by ${song.importCount} workspaces',
-                    style: context.text.bodyMedium!.copyWith(color: c.mutedForeground),
-                  ),
-                ],
-                if (detail.value case final d? when _hasLinks(d)) ...[
-                  const SizedBox(height: DaloySpace.s4),
-                  SongStreamingLinks(song: _asSong(d)),
-                ],
-                const SizedBox(height: DaloySpace.s6),
-                switch (detail) {
-                  AsyncData(:final value) => _Chart(song: value),
-                  AsyncError() => InsetPlaceholder(
-                    icon: TablerIcons.cloud_off,
-                    title: "Couldn't load the chart",
-                    body: 'Check your connection and try again.',
-                    action: DaloyButton.outline(
-                      label: 'Try again',
-                      size: ControlSize.sm,
-                      onPressed: () => ref.invalidate(networkSongProvider(widget.song.id)),
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            controller: widget.scroll,
+            padding: const EdgeInsets.fromLTRB(DaloySpace.s5, DaloySpace.s2, DaloySpace.s5, DaloySpace.s6),
+            children: [
+              Row(
+                children: [
+                  Icon(TablerIcons.world, size: 16, color: c.mutedForeground),
+                  const SizedBox(width: DaloySpace.s1_5),
+                  Expanded(
+                    child: Text(
+                      song.isOwnWorkspace
+                          ? 'Discover · shared by your team'
+                          : 'Discover · shared by ${song.workspaceName}',
+                      style: context.text.labelLarge!.copyWith(color: c.mutedForeground),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  _ => SkeletonPulse(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var i = 0; i < 8; i++) ...[
-                          SkeletonBox(widthFactor: i.isEven ? 0.7 : 0.5, height: 14, radius: DaloyRadii.md),
-                          const SizedBox(height: DaloySpace.s3),
-                        ],
-                      ],
-                    ),
-                  ),
-                },
+                ],
+              ),
+              const SizedBox(height: DaloySpace.s3),
+              Text(song.title, style: context.text.displaySmall),
+              if (meta.isNotEmpty) ...[
+                const SizedBox(height: DaloySpace.s1),
+                Text(meta, style: context.text.bodyLarge!.copyWith(color: c.mutedForeground)),
               ],
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(context).bottomSheetTheme.backgroundColor ?? c.background,
-              border: Border(top: BorderSide(color: c.border)),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(DaloySpace.s5, DaloySpace.s3, DaloySpace.s5, DaloySpace.s3),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_error != null) ...[
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: context.text.bodyMedium!.copyWith(color: c.destructive),
-                      ),
-                      const SizedBox(height: DaloySpace.s2),
-                    ],
-                    if (song.isOwnWorkspace)
-                      DaloyButton.outline(
-                        label: 'Stop sharing',
-                        icon: TablerIcons.world_off,
-                        expand: true,
-                        loading: _unsharing,
-                        onPressed: _unshare,
-                      )
-                    else
-                      DaloyButton(
-                        label: song.alreadyAdded ? 'Already in your library' : 'Add to library',
-                        icon: song.alreadyAdded ? TablerIcons.check : TablerIcons.plus,
-                        expand: true,
-                        loading: _adding,
-                        onPressed: song.alreadyAdded ? null : _add,
-                      ),
-                  ],
+              if (song.importCount > 0) ...[
+                const SizedBox(height: DaloySpace.s1),
+                Text(
+                  song.importCount == 1 ? 'Added by 1 workspace' : 'Added by ${song.importCount} workspaces',
+                  style: context.text.bodyMedium!.copyWith(color: c.mutedForeground),
                 ),
+              ],
+              if (detail.value case final d? when _hasLinks(d)) ...[
+                const SizedBox(height: DaloySpace.s4),
+                SongStreamingLinks(song: _asSong(d)),
+              ],
+              const SizedBox(height: DaloySpace.s6),
+              switch (detail) {
+                AsyncData(:final value) => _Chart(song: value),
+                AsyncError() => InsetPlaceholder(
+                  icon: TablerIcons.cloud_off,
+                  title: "Couldn't load the chart",
+                  body: 'Check your connection and try again.',
+                  action: DaloyButton.outline(
+                    label: 'Try again',
+                    size: ControlSize.sm,
+                    onPressed: () => ref.invalidate(networkSongProvider(widget.song.id)),
+                  ),
+                ),
+                _ => SkeletonPulse(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < 8; i++) ...[
+                        SkeletonBox(widthFactor: i.isEven ? 0.7 : 0.5, height: 14, radius: DaloyRadii.md),
+                        const SizedBox(height: DaloySpace.s3),
+                      ],
+                    ],
+                  ),
+                ),
+              },
+            ],
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: Theme.of(context).bottomSheetTheme.backgroundColor ?? c.background,
+            border: Border(top: BorderSide(color: c.border)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(DaloySpace.s5, DaloySpace.s3, DaloySpace.s5, DaloySpace.s3),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_error != null) ...[
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: context.text.bodyMedium!.copyWith(color: c.destructive),
+                    ),
+                    const SizedBox(height: DaloySpace.s2),
+                  ],
+                  if (song.isOwnWorkspace)
+                    DaloyButton.outline(
+                      label: 'Stop sharing',
+                      icon: TablerIcons.world_off,
+                      expand: true,
+                      loading: _unsharing,
+                      onPressed: _unshare,
+                    )
+                  else
+                    DaloyButton(
+                      label: added ? 'Already in your library' : 'Add to library',
+                      icon: added ? TablerIcons.check : TablerIcons.plus,
+                      expand: true,
+                      loading: _adding,
+                      onPressed: added ? null : _add,
+                    ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
