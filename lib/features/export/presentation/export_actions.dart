@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/analytics/analytics.dart';
+import '../../../core/utils/platform.dart';
 import '../../../shared/widgets/daloy_toast.dart';
 import '../../line_ups/domain/line_up.dart';
 import '../../songs/domain/song.dart';
@@ -95,13 +97,12 @@ Future<void> _export(
           text: () => exportText(set, chords: chords, notation: choice.notation),
         );
       case ExportFormat.chordPro:
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile.fromData(utf8.encode(chordProText(set)), mimeType: 'text/plain', name: fileName)],
-            fileNameOverrides: [fileName],
-            subject: set.title,
-            sharePositionOrigin: origin,
-          ),
+        await _deliver(
+          bytes: Uint8List.fromList(utf8.encode(chordProText(set))),
+          mimeType: 'text/plain',
+          fileName: fileName,
+          title: set.title,
+          origin: origin,
         );
       case ExportFormat.chordProCopy:
         await Clipboard.setData(ClipboardData(text: chordProText(set)));
@@ -109,23 +110,39 @@ Future<void> _export(
         showDaloyToast(messenger, 'Copied as ChordPro.');
       case ExportFormat.lyricsPptx:
         final bytes = buildLyricsPptx(set);
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [
-              XFile.fromData(
-                bytes,
-                mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                name: fileName,
-              ),
-            ],
-            fileNameOverrides: [fileName],
-            subject: set.title,
-            sharePositionOrigin: origin,
-          ),
+        await _deliver(
+          bytes: bytes,
+          mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          fileName: fileName,
+          title: set.title,
+          origin: origin,
         );
     }
   } on Object catch (e, stack) {
     FlutterError.reportError(FlutterErrorDetails(exception: e, stack: stack, library: 'export'));
     showDaloyToast(messenger, "Couldn't export “${set.title}”. Try again.");
   }
+}
+
+/// Hand a generated file to the user: the Save As dialog on Windows, where the
+/// share sheet has nowhere to put it, the system share sheet elsewhere.
+Future<void> _deliver({
+  required Uint8List bytes,
+  required String mimeType,
+  required String fileName,
+  required String title,
+  required Rect? origin,
+}) async {
+  if (isWindows) {
+    await FilePicker.saveFile(fileName: fileName, bytes: bytes, mimeType: mimeType, dialogTitle: 'Save $fileName');
+    return;
+  }
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [XFile.fromData(bytes, mimeType: mimeType, name: fileName)],
+      fileNameOverrides: [fileName],
+      subject: title,
+      sharePositionOrigin: origin,
+    ),
+  );
 }
